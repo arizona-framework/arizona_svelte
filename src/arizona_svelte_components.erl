@@ -9,5 +9,6 @@ component(Bindings) ->
         data-svelte-props='{iolist_to_binary(
             json:encode(arizona_template:get_binding(props, Bindings, #{}))
         )}'
+        data-arizona-update="false"
     ></div>
     """).

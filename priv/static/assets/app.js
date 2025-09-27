@@ -1,109 +1,109 @@
 var Q = 11;
-function le(r, e) {
-  var t = e.attributes, n, a, c, h, v;
-  if (!(e.nodeType === Q || r.nodeType === Q)) {
-    for (var b = t.length - 1; b >= 0; b--) n = t[b], a = n.name, c = n.namespaceURI, h = n.value, c ? (a = n.localName || a, v = r.getAttributeNS(c, a), v !== h && (n.prefix === "xmlns" && (a = n.name), r.setAttributeNS(c, a, h))) : (v = r.getAttribute(a), v !== h && r.setAttribute(a, h));
-    for (var T = r.attributes, y = T.length - 1; y >= 0; y--) n = T[y], a = n.name, c = n.namespaceURI, c ? (a = n.localName || a, e.hasAttributeNS(c, a) || r.removeAttributeNS(c, a)) : e.hasAttribute(a) || r.removeAttribute(a);
+function le(a, e) {
+  var t = e.attributes, n, r, c, f, v;
+  if (!(e.nodeType === Q || a.nodeType === Q)) {
+    for (var b = t.length - 1; b >= 0; b--) n = t[b], r = n.name, c = n.namespaceURI, f = n.value, c ? (r = n.localName || r, v = a.getAttributeNS(c, r), v !== f && (n.prefix === "xmlns" && (r = n.name), a.setAttributeNS(c, r, f))) : (v = a.getAttribute(r), v !== f && a.setAttribute(r, f));
+    for (var T = a.attributes, y = T.length - 1; y >= 0; y--) n = T[y], r = n.name, c = n.namespaceURI, c ? (r = n.localName || r, e.hasAttributeNS(c, r) || a.removeAttributeNS(c, r)) : e.hasAttribute(r) || a.removeAttribute(r);
   }
 }
 var _, de = "http://www.w3.org/1999/xhtml", u = typeof document > "u" ? void 0 : document, ce = !!u && "content" in u.createElement("template"), oe = !!u && u.createRange && "createContextualFragment" in u.createRange();
-function he(r) {
+function fe(a) {
   var e = u.createElement("template");
-  return e.innerHTML = r, e.content.childNodes[0];
+  return e.innerHTML = a, e.content.childNodes[0];
 }
-function fe(r) {
+function he(a) {
   _ || (_ = u.createRange(), _.selectNode(u.body));
-  var e = _.createContextualFragment(r);
+  var e = _.createContextualFragment(a);
   return e.childNodes[0];
 }
-function ue(r) {
+function ue(a) {
   var e = u.createElement("body");
-  return e.innerHTML = r, e.childNodes[0];
+  return e.innerHTML = a, e.childNodes[0];
 }
-function ve(r) {
-  return r = r.trim(), ce ? he(r) : oe ? fe(r) : ue(r);
+function ve(a) {
+  return a = a.trim(), ce ? fe(a) : oe ? he(a) : ue(a);
 }
-function D(r, e) {
-  var t = r.nodeName, n = e.nodeName, a, c;
-  return t === n ? true : (a = t.charCodeAt(0), c = n.charCodeAt(0), a <= 90 && c >= 97 ? t === n.toUpperCase() : c <= 90 && a >= 97 ? n === t.toUpperCase() : false);
+function D(a, e) {
+  var t = a.nodeName, n = e.nodeName, r, c;
+  return t === n ? true : (r = t.charCodeAt(0), c = n.charCodeAt(0), r <= 90 && c >= 97 ? t === n.toUpperCase() : c <= 90 && r >= 97 ? n === t.toUpperCase() : false);
 }
-function pe(r, e) {
-  return !e || e === de ? u.createElement(r) : u.createElementNS(e, r);
+function pe(a, e) {
+  return !e || e === de ? u.createElement(a) : u.createElementNS(e, a);
 }
-function ge(r, e) {
-  for (var t = r.firstChild; t; ) {
+function ge(a, e) {
+  for (var t = a.firstChild; t; ) {
     var n = t.nextSibling;
     e.appendChild(t), t = n;
   }
   return e;
 }
-function F(r, e, t) {
-  r[t] !== e[t] && (r[t] = e[t], r[t] ? r.setAttribute(t, "") : r.removeAttribute(t));
+function F(a, e, t) {
+  a[t] !== e[t] && (a[t] = e[t], a[t] ? a.setAttribute(t, "") : a.removeAttribute(t));
 }
-var Y = { OPTION: function(r, e) {
-  var t = r.parentNode;
+var Y = { OPTION: function(a, e) {
+  var t = a.parentNode;
   if (t) {
     var n = t.nodeName.toUpperCase();
-    n === "OPTGROUP" && (t = t.parentNode, n = t && t.nodeName.toUpperCase()), n === "SELECT" && !t.hasAttribute("multiple") && (r.hasAttribute("selected") && !e.selected && (r.setAttribute("selected", "selected"), r.removeAttribute("selected")), t.selectedIndex = -1);
+    n === "OPTGROUP" && (t = t.parentNode, n = t && t.nodeName.toUpperCase()), n === "SELECT" && !t.hasAttribute("multiple") && (a.hasAttribute("selected") && !e.selected && (a.setAttribute("selected", "selected"), a.removeAttribute("selected")), t.selectedIndex = -1);
   }
-  F(r, e, "selected");
-}, INPUT: function(r, e) {
-  F(r, e, "checked"), F(r, e, "disabled"), r.value !== e.value && (r.value = e.value), e.hasAttribute("value") || r.removeAttribute("value");
-}, TEXTAREA: function(r, e) {
+  F(a, e, "selected");
+}, INPUT: function(a, e) {
+  F(a, e, "checked"), F(a, e, "disabled"), a.value !== e.value && (a.value = e.value), e.hasAttribute("value") || a.removeAttribute("value");
+}, TEXTAREA: function(a, e) {
   var t = e.value;
-  r.value !== t && (r.value = t);
-  var n = r.firstChild;
+  a.value !== t && (a.value = t);
+  var n = a.firstChild;
   if (n) {
-    var a = n.nodeValue;
-    if (a == t || !t && a == r.placeholder) return;
+    var r = n.nodeValue;
+    if (r == t || !t && r == a.placeholder) return;
     n.nodeValue = t;
   }
-}, SELECT: function(r, e) {
+}, SELECT: function(a, e) {
   if (!e.hasAttribute("multiple")) {
-    for (var t = -1, n = 0, a = r.firstChild, c, h; a; ) if (h = a.nodeName && a.nodeName.toUpperCase(), h === "OPTGROUP") c = a, a = c.firstChild, a || (a = c.nextSibling, c = null);
+    for (var t = -1, n = 0, r = a.firstChild, c, f; r; ) if (f = r.nodeName && r.nodeName.toUpperCase(), f === "OPTGROUP") c = r, r = c.firstChild, r || (r = c.nextSibling, c = null);
     else {
-      if (h === "OPTION") {
-        if (a.hasAttribute("selected")) {
+      if (f === "OPTION") {
+        if (r.hasAttribute("selected")) {
           t = n;
           break;
         }
         n++;
       }
-      a = a.nextSibling, !a && c && (a = c.nextSibling, c = null);
+      r = r.nextSibling, !r && c && (r = c.nextSibling, c = null);
     }
-    r.selectedIndex = t;
+    a.selectedIndex = t;
   }
 } }, N = 1, J = 11, Z = 3, ee = 8;
 function A() {
 }
-function we(r) {
-  if (r) return r.getAttribute && r.getAttribute("id") || r.id;
+function we(a) {
+  if (a) return a.getAttribute && a.getAttribute("id") || a.id;
 }
-function Ae(r) {
-  return function(t, n, a) {
-    if (a || (a = {}), typeof n == "string") if (t.nodeName === "#document" || t.nodeName === "HTML" || t.nodeName === "BODY") {
+function Ae(a) {
+  return function(t, n, r) {
+    if (r || (r = {}), typeof n == "string") if (t.nodeName === "#document" || t.nodeName === "HTML" || t.nodeName === "BODY") {
       var c = n;
       n = u.createElement("html"), n.innerHTML = c;
     } else n = ve(n);
     else n.nodeType === J && (n = n.firstElementChild);
-    var h = a.getNodeKey || we, v = a.onBeforeNodeAdded || A, b = a.onNodeAdded || A, T = a.onBeforeElUpdated || A, y = a.onElUpdated || A, H = a.onBeforeNodeDiscarded || A, M = a.onNodeDiscarded || A, ne = a.onBeforeElChildrenUpdated || A, re = a.skipFromChildren || A, K = a.addChild || function(i, s) {
+    var f = r.getNodeKey || we, v = r.onBeforeNodeAdded || A, b = r.onNodeAdded || A, T = r.onBeforeElUpdated || A, y = r.onElUpdated || A, z = r.onBeforeNodeDiscarded || A, M = r.onNodeDiscarded || A, ne = r.onBeforeElChildrenUpdated || A, ae = r.skipFromChildren || A, K = r.addChild || function(i, s) {
       return i.appendChild(s);
-    }, z = a.childrenOnly === true, S = /* @__PURE__ */ Object.create(null), O = [];
+    }, H = r.childrenOnly === true, S = /* @__PURE__ */ Object.create(null), O = [];
     function P(i) {
       O.push(i);
     }
     function X(i, s) {
       if (i.nodeType === N) for (var o = i.firstChild; o; ) {
         var l = void 0;
-        s && (l = h(o)) ? P(l) : (M(o), o.firstChild && X(o, s)), o = o.nextSibling;
+        s && (l = f(o)) ? P(l) : (M(o), o.firstChild && X(o, s)), o = o.nextSibling;
       }
     }
     function R(i, s, o) {
-      H(i) !== false && (s && s.removeChild(i), M(i), X(i, o));
+      z(i) !== false && (s && s.removeChild(i), M(i), X(i, o));
     }
     function $(i) {
       if (i.nodeType === N || i.nodeType === J) for (var s = i.firstChild; s; ) {
-        var o = h(s);
+        var o = f(s);
         o && (S[o] = s), $(s), s = s.nextSibling;
       }
     }
@@ -111,7 +111,7 @@ function Ae(r) {
     function V(i) {
       b(i);
       for (var s = i.firstChild; s; ) {
-        var o = s.nextSibling, l = h(s);
+        var o = s.nextSibling, l = f(s);
         if (l) {
           var d = S[l];
           d && D(s, d) ? (s.parentNode.replaceChild(d, s), L(d, s)) : V(s);
@@ -119,31 +119,31 @@ function Ae(r) {
         s = o;
       }
     }
-    function ae(i, s, o) {
+    function re(i, s, o) {
       for (; s; ) {
         var l = s.nextSibling;
-        (o = h(s)) ? P(o) : R(s, i, true), s = l;
+        (o = f(s)) ? P(o) : R(s, i, true), s = l;
       }
     }
     function L(i, s, o) {
-      var l = h(s);
+      var l = f(s);
       if (l && delete S[l], !o) {
         var d = T(i, s);
-        if (d === false || (d instanceof HTMLElement && (i = d, $(i)), r(i, s), y(i), ne(i, s) === false)) return;
+        if (d === false || (d instanceof HTMLElement && (i = d, $(i)), a(i, s), y(i), ne(i, s) === false)) return;
       }
       i.nodeName !== "TEXTAREA" ? ie(i, s) : Y.TEXTAREA(i, s);
     }
     function ie(i, s) {
-      var o = re(i, s), l = s.firstChild, d = i.firstChild, k, p, m, E, g;
+      var o = ae(i, s), l = s.firstChild, d = i.firstChild, k, p, m, E, g;
       e: for (; l; ) {
-        for (E = l.nextSibling, k = h(l); !o && d; ) {
+        for (E = l.nextSibling, k = f(l); !o && d; ) {
           if (m = d.nextSibling, l.isSameNode && l.isSameNode(d)) {
             l = E, d = m;
             continue e;
           }
-          p = h(d);
+          p = f(d);
           var C = d.nodeType, w = void 0;
-          if (C === l.nodeType && (C === N ? (k ? k !== p && ((g = S[k]) ? m === g ? w = false : (i.insertBefore(g, d), p ? P(p) : R(d, i, true), d = g, p = h(d)) : w = false) : p && (w = false), w = w !== false && D(d, l), w && L(d, l)) : (C === Z || C == ee) && (w = true, d.nodeValue !== l.nodeValue && (d.nodeValue = l.nodeValue))), w) {
+          if (C === l.nodeType && (C === N ? (k ? k !== p && ((g = S[k]) ? m === g ? w = false : (i.insertBefore(g, d), p ? P(p) : R(d, i, true), d = g, p = f(d)) : w = false) : p && (w = false), w = w !== false && D(d, l), w && L(d, l)) : (C === Z || C == ee) && (w = true, d.nodeValue !== l.nodeValue && (d.nodeValue = l.nodeValue))), w) {
             l = E, d = m;
             continue e;
           }
@@ -156,27 +156,27 @@ function Ae(r) {
         }
         l = E, d = m;
       }
-      ae(i, d, p);
+      re(i, d, p);
       var j = Y[i.nodeName];
       j && j(i, s);
     }
-    var f = t, x = f.nodeType, q = n.nodeType;
-    if (!z) {
-      if (x === N) q === N ? D(t, n) || (M(t), f = ge(t, pe(n.nodeName, n.namespaceURI))) : f = n;
+    var h = t, x = h.nodeType, q = n.nodeType;
+    if (!H) {
+      if (x === N) q === N ? D(t, n) || (M(t), h = ge(t, pe(n.nodeName, n.namespaceURI))) : h = n;
       else if (x === Z || x === ee) {
-        if (q === x) return f.nodeValue !== n.nodeValue && (f.nodeValue = n.nodeValue), f;
-        f = n;
+        if (q === x) return h.nodeValue !== n.nodeValue && (h.nodeValue = n.nodeValue), h;
+        h = n;
       }
     }
-    if (f === n) M(t);
+    if (h === n) M(t);
     else {
-      if (n.isSameNode && n.isSameNode(f)) return;
-      if (L(f, n, z), O) for (var B = 0, se = O.length; B < se; B++) {
+      if (n.isSameNode && n.isSameNode(h)) return;
+      if (L(h, n, H), O) for (var B = 0, se = O.length; B < se; B++) {
         var I = S[O[B]];
         I && R(I, I.parentNode, false);
       }
     }
-    return !z && f !== t && t.parentNode && (f.actualize && (f = f.actualize(t.ownerDocument || u)), t.parentNode.replaceChild(f, t)), f;
+    return !H && h !== t && t.parentNode && (h.actualize && (h = h.actualize(t.ownerDocument || u)), t.parentNode.replaceChild(h, t)), h;
   };
 }
 var be = Ae(le), te = be;
@@ -188,9 +188,9 @@ var U = { silent: -1, error: 3, warning: 4, info: 6, debug: 7 }, G = class {
     if (this.connected) return;
     let t = e.wsPath || "/live", n = e.workerPath || "/assets/js/arizona-worker.min.js";
     this.worker = new Worker(n, { type: "module" });
-    let a = window.location.protocol === "https:" ? "wss:" : "ws:", c = window.location.host, h = window.location.pathname, v = window.location.search, b = encodeURIComponent(h), T = v ? encodeURIComponent(v.substring(1)) : "", y = `${a}//${c}${t}?path=${b}&qs=${T}`;
-    this.worker.postMessage({ type: "connect", data: { url: y } }), this.worker.onmessage = (H) => {
-      this.handleWorkerMessage(H.data);
+    let r = window.location.protocol === "https:" ? "wss:" : "ws:", c = window.location.host, f = window.location.pathname, v = window.location.search, b = encodeURIComponent(f), T = v ? encodeURIComponent(v.substring(1)) : "", y = `${r}//${c}${t}?path=${b}&qs=${T}`;
+    this.worker.postMessage({ type: "connect", data: { url: y } }), this.worker.onmessage = (z) => {
+      this.handleWorkerMessage(z.data);
     };
   }
   sendEvent(e, t = {}) {
@@ -229,8 +229,8 @@ var U = { silent: -1, error: 3, warning: 4, info: 6, debug: 7 }, G = class {
         default:
           this.handleUnknownMessage(e);
       }
-    } catch (a) {
-      this.error("Error handling worker message:", a);
+    } catch (r) {
+      this.error("Error handling worker message:", r);
     }
   }
   handleStatus(e) {
@@ -246,8 +246,8 @@ var U = { silent: -1, error: 3, warning: 4, info: 6, debug: 7 }, G = class {
       return;
     }
     try {
-      te(t, e.html, { onBeforeElUpdated(n, a) {
-        return !n.isEqualNode(a);
+      te(t, e.html, { onBeforeElUpdated(n, r) {
+        return r.dataset?.arizonaUpdate === "false" ? false : !n.isEqualNode(r);
       } }), this.debug("Patch applied successfully"), t.dispatchEvent(new CustomEvent("arizona:patched", { detail: { patch: e } }));
     } catch (n) {
       this.error("Error applying HTML patch:", n);
@@ -2723,19 +2723,6 @@ function prop(props, key, flags2, fallback) {
     return getter;
   }
 }
-var root$1 = /* @__PURE__ */ from_html(`<main class="p-4"><h1 class="text-2xl font-bold text-blue-600"> </h1> <p class="mt-2 text-gray-600">This is a Svelte component integrated with Arizona framework.</p></main>`);
-function App($$anchor, $$props) {
-  let name = prop($$props, "name", 3, "World");
-  var main = root$1();
-  var h1 = child(main);
-  var text = child(h1);
-  template_effect(() => set_text(text, `Hello, ${name() ?? ""}!`));
-  append($$anchor, main);
-}
-const __vite_glob_0_0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: App
-}, Symbol.toStringTag, { value: "Module" }));
 function increment(_2, count) {
   set(count, get(count) + 1);
 }
@@ -2745,7 +2732,7 @@ function decrement(__1, count) {
 function reset(__2, count) {
   set(count, 0);
 }
-var root = /* @__PURE__ */ from_html(`<div class="p-4 bg-white rounded-lg shadow-md max-w-sm"><h2 class="text-xl font-bold text-gray-800 mb-4">Counter</h2> <div class="text-center"><div class="text-3xl font-bold text-blue-600 mb-4"> </div> <div class="flex gap-2 justify-center"><button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">-</button> <button class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">Reset</button> <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">+</button></div></div></div>`);
+var root$1 = /* @__PURE__ */ from_html(`<div class="p-4 bg-white rounded-lg shadow-md max-w-sm"><h2 class="text-xl font-bold text-gray-800 mb-4">Counter</h2> <div class="text-center"><div class="text-3xl font-bold text-blue-600 mb-4"> </div> <div class="flex gap-2 justify-center"><button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">-</button> <button class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">Reset</button> <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">+</button></div></div></div>`);
 function Counter($$anchor, $$props) {
   push($$props, true);
   let initialCount = prop($$props, "initialCount", 3, 0);
@@ -2753,7 +2740,7 @@ function Counter($$anchor, $$props) {
   user_effect(() => {
     set(count, initialCount());
   });
-  var div = root();
+  var div = root$1();
   var div_1 = sibling(child(div), 2);
   var div_2 = child(div_1);
   var text = child(div_2);
@@ -2769,9 +2756,22 @@ function Counter($$anchor, $$props) {
   pop();
 }
 delegate(["click"]);
-const __vite_glob_0_1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Counter
+}, Symbol.toStringTag, { value: "Module" }));
+var root = /* @__PURE__ */ from_html(`<main class="p-4"><h1 class="text-2xl font-bold text-blue-600"> </h1> <p class="mt-2 text-gray-600">This is a Svelte component integrated with Arizona framework.</p></main>`);
+function HelloWorld($$anchor, $$props) {
+  let name = prop($$props, "name", 3, "World");
+  var main = root();
+  var h1 = child(main);
+  var text = child(h1);
+  template_effect(() => set_text(text, `Hello, ${name() ?? ""}!`));
+  append($$anchor, main);
+}
+const __vite_glob_0_1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: HelloWorld
 }, Symbol.toStringTag, { value: "Module" }));
 class ArizonaSvelteDiscovery {
   constructor(options = {}) {
@@ -2785,7 +2785,7 @@ class ArizonaSvelteDiscovery {
    * @returns {Promise<Object>} Map of component paths to modules
    */
   async discoverComponents() {
-    this.componentModules = /* @__PURE__ */ Object.assign({ "../svelte/components/App.svelte": __vite_glob_0_0, "../svelte/components/Counter.svelte": __vite_glob_0_1 });
+    this.componentModules = /* @__PURE__ */ Object.assign({ "../svelte/components/Counter.svelte": __vite_glob_0_0, "../svelte/components/HelloWorld.svelte": __vite_glob_0_1 });
     return this.componentModules;
   }
   /**
@@ -2838,8 +2838,7 @@ class ArizonaSvelteLifecycle {
   }
   /**
    * Mount Svelte components from DOM data attributes
-   * @returns {Promise<number>} Number of components mounted
-   */
+   * @returns {Promise<number>} Number of components mounted */
   async mountComponents() {
     const svelteTargets = document.querySelectorAll("[data-svelte-component]");
     let mountedCount = 0;
@@ -2890,7 +2889,7 @@ class ArizonaSvelteLifecycle {
    */
   unmountAllComponents() {
     let unmountedCount = 0;
-    this.mountedComponents.forEach((instance, target) => {
+    this.mountedComponents.forEach((_instance, target) => {
       if (this.unmountComponent(target)) {
         unmountedCount++;
       }
@@ -3000,7 +2999,7 @@ class ArizonaSvelte {
     return await this.lifecycle.mountComponents();
   }
 }
-const arizona = new G({ logLevel: "debug" });
+globalThis.arizona = new G({ logLevel: "debug" });
 arizona.connect({ wsPath: "/live" });
 const arizonaSvelte = new ArizonaSvelte();
 arizonaSvelte.mountComponents();

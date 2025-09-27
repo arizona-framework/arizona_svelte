@@ -7,7 +7,7 @@ render(Bindings) ->
         ~"Arizona - A modern Erlang web framework for building scalable, ",
         ~"fault-tolerant real-time applications on the BEAM"
     ],
-    Image = ~"images/arizona-hero-bg.jpg",
+    Image = ~"images/arizona-svelte-hero-bg.png",
     arizona_template:from_html(~"""
     <!DOCTYPE html>
     <html lang="en" class="h-full">

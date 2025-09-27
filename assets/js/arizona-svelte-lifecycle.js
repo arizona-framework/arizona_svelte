@@ -17,8 +17,7 @@ class ArizonaSvelteLifecycle {
 
   /**
    * Mount Svelte components from DOM data attributes
-   * @returns {Promise<number>} Number of components mounted
-   */
+   * @returns {Promise<number>} Number of components mounted */
   async mountComponents() {
     const svelteTargets = document.querySelectorAll('[data-svelte-component]');
     let mountedCount = 0;
@@ -80,7 +79,7 @@ class ArizonaSvelteLifecycle {
   unmountAllComponents() {
     let unmountedCount = 0;
 
-    this.mountedComponents.forEach((instance, target) => {
+    this.mountedComponents.forEach((_instance, target) => {
       if (this.unmountComponent(target)) {
         unmountedCount++;
       }
