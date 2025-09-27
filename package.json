@@ -2,13 +2,14 @@
   "name": "arizona_svelte",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build:js": "vite build --mode development",
-    "build:js:prod": "vite build --mode production",
-    "build:css": "node build-css.js",
+    "dev": "vite --config assets/vite.config.js",
+    "build:js": "vite build --config assets/vite.config.js --mode development",
+    "build:js:prod": "vite build --config assets/vite.config.js --mode production",
+    "build:css": "npx tailwindcss -c assets/tailwind.config.js -i assets/css/app.css -o priv/static/assets/app.css",
+    "build:css:prod": "npx tailwindcss -c assets/tailwind.config.js -i assets/css/app.css -o priv/static/assets/app.css --minify",
     "build": "npm run build:js && npm run build:css",
-    "build:prod": "npm run build:js:prod && npm run build:css",
-    "preview": "vite preview"
+    "build:prod": "npm run build:js:prod && npm run build:css:prod",
+    "preview": "vite preview --config assets/vite.config.js"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.1",

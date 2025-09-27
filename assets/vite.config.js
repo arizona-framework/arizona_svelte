@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@arizona-framework/client': './_checkouts/arizona/priv/static/assets/js/arizona.min.js'
+        '@arizona-framework/client': '_checkouts/arizona/priv/static/assets/js/arizona.min.js'
       }
     }
   };
