@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       minify: !isDev,
       sourcemap: isDev,
       reportCompressedSize: !isDev, // Skip gzip reporting in dev for faster builds
+      emptyOutDir: false, // Don't clean the output directory to preserve app.css
       rollupOptions: {
         input: 'assets/js/main.js',
         output: {

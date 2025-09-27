@@ -6,6 +6,7 @@
 % Components
 -export([hero/1]).
 -export([welcome_card/1]).
+-export([demo_section/1]).
 -export([enhanced_next_steps/1]).
 -export([next_step/1]).
 -export([quick_link_card/1]).
@@ -35,14 +36,14 @@ render(Bindings) ->
 
         <div class="relative z-10 flex items-center justify-center min-h-screen p-4 sm:p-8">
             <div class="max-w-6xl mx-auto">
-
-                {arizona_template:render_stateful(arizona_svelte_counter, #{})}
-
                 {% Hero Section }
                 {arizona_template:render_stateless(Module, hero, #{})}
 
                 {% Welcome Card }
                 {arizona_template:render_stateless(Module, welcome_card, #{})}
+
+                {% Demo Section }
+                {arizona_template:render_stateless(Module, demo_section, #{})}
 
                 {% Enhanced Next Steps }
                 {arizona_template:render_stateless(Module, enhanced_next_steps, #{})}
@@ -60,7 +61,7 @@ hero(_Bindings) ->
                     ~"text-arizona-terracotta bg-gradient-to-r from-arizona-terracotta",
                     ~"to-arizona-gold bg-clip-text text-transparent"
                 ]}">
-                    Arizona
+                    Arizona Svelte
                 </span>
             </h1>
             <div class="{[
@@ -90,15 +91,12 @@ welcome_card(_Bindings) ->
         ~"hover:shadow-arizona-teal/10 transition-all duration-300"
     ]}">
         <div class="text-center mb-8">
-            <h2 class="{[
-                ~"text-3xl sm:text-4xl font-bold text-pearl mb-4 bg-gradient-to-r from-pearl ",
-                ~"to-silver bg-clip-text text-transparent"
-            ]}">
-                Welcome to your new Arizona project!
+            <h2 class="text-3xl sm:text-4xl font-bold text-pearl mb-4">
+                Welcome to your new Arizona Svelte project!
             </h2>
             <p class="text-lg text-silver/90 max-w-3xl mx-auto leading-relaxed">
                 Your application is running successfully. You're now ready to build
-                scalable, fault-tolerant real-time web applications on the BEAM.
+                scalable, fault-tolerant real-time web applications with Svelte components on the BEAM.
             </p>
         </div>
 
@@ -112,14 +110,14 @@ welcome_card(_Bindings) ->
                 #{
                     href => ~"https://github.com/arizona-framework/arizona/blob/main/README.md",
                     icon => ~[<span class="text-2xl">📚</span>],
-                    title => ~"Documentation",
+                    title => ~"Arizona Docs",
                     description => ~"Learn how to build powerful applications with Arizona's comprehensive guides"
                 },
                 #{
-                    href => ~"https://github.com/arizona-framework/arizona/tree/main/test/support/e2e",
-                    icon => ~[<span class="text-2xl">🚀</span>],
-                    title => ~"Examples",
-                    description => ~"Explore sample applications and get inspired by real-world implementations"
+                    href => ~"https://svelte.dev/docs",
+                    icon => ~[<span class="text-2xl">⚡</span>],
+                    title => ~"Svelte Docs",
+                    description => ~"Master Svelte's reactive components and modern development patterns"
                 },
                 #{
                     href => ~"https://github.com/arizona-framework/arizona",
@@ -145,6 +143,118 @@ welcome_card(_Bindings) ->
                     extra_classes => ~"sm:col-span-2 lg:col-span-1"
                 }
             ])}
+        </div>
+    </div>
+    """").
+
+demo_section(_Bindings) ->
+    arizona_template:from_html(~""""
+    <div class="mb-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl sm:text-4xl font-bold text-pearl mb-4">
+                Component Architecture Demo
+            </h2>
+            <p class="text-lg text-silver/90 max-w-4xl mx-auto leading-relaxed">
+                Experience the power of mixing pure Svelte components with Arizona's real-time server components
+            </p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            {% Pure Svelte Components }
+            <div class="{[
+                ~"group bg-gradient-to-br from-charcoal/80 to-slate/60 backdrop-blur-xl rounded-2xl p-8 ",
+                ~"border border-arizona-teal/20 hover:border-arizona-teal/40 transition-all duration-300 ",
+                ~"hover:shadow-xl hover:shadow-arizona-teal/10 hover:-translate-y-1"
+            ]}">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="{[
+                        ~"w-10 h-10 bg-arizona-teal/20 rounded-xl flex items-center justify-center ",
+                        ~"group-hover:bg-arizona-teal/30 transition-colors duration-300"
+                    ]}">
+                        <span class="text-xl">⚡</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-arizona-teal">Pure Svelte Components</h3>
+                        <p class="text-sm text-arizona-teal/70">Client-side only • No server updates</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    {% Svelte HelloWorld }
+                    <div class="bg-obsidian/40 rounded-lg p-4 border border-arizona-teal/10">
+                        {arizona_svelte:render_component(~"HelloWorld", #{
+                            name => ~"Arizona Svelte"
+                        })}
+                    </div>
+
+                    {% Svelte Counter }
+                    <div class="bg-obsidian/40 rounded-lg p-4 border border-arizona-teal/10">
+                        {arizona_svelte:render_component(~"Counter", #{})}
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-arizona-teal/5 rounded-lg border border-arizona-teal/20">
+                    <p class="text-sm text-silver/90 leading-relaxed">
+                        <strong class="text-arizona-teal">Pure Svelte:</strong> These components run entirely in the browser using Svelte's reactive system. They maintain their own state and won't be affected by Arizona's live updates.
+                    </p>
+                </div>
+            </div>
+
+            {% Arizona Server Components }
+            <div class="{[
+                ~"group bg-gradient-to-br from-charcoal/80 to-slate/60 backdrop-blur-xl rounded-2xl p-8 ",
+                ~"border border-arizona-terracotta/20 hover:border-arizona-terracotta/40 transition-all duration-300 ",
+                ~"hover:shadow-xl hover:shadow-arizona-terracotta/10 hover:-translate-y-1"
+            ]}">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="{[
+                        ~"w-10 h-10 bg-arizona-terracotta/20 rounded-xl flex items-center justify-center ",
+                        ~"group-hover:bg-arizona-terracotta/30 transition-colors duration-300"
+                    ]}">
+                        <span class="text-xl">🔄</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-arizona-terracotta">Arizona Server Components</h3>
+                        <p class="text-sm text-arizona-terracotta/70">Server-side • Real-time updates</p>
+                    </div>
+                </div>
+
+                <div class="bg-obsidian/40 rounded-lg p-4 border border-arizona-terracotta/10">
+                    {arizona_template:render_stateful(arizona_svelte_counter, #{})}
+                </div>
+
+                <div class="mt-6 p-4 bg-arizona-terracotta/5 rounded-lg border border-arizona-terracotta/20">
+                    <p class="text-sm text-silver/90 leading-relaxed mb-3">
+                        <strong class="text-arizona-terracotta">Arizona Stateful Components:</strong> Server-rendered components that update in real-time through WebSocket connections. State is managed on the server with automatic synchronization to all connected clients.
+                    </p>
+                    <p class="text-sm text-silver/90 leading-relaxed">
+                        <strong class="text-arizona-terracotta">Component Embedding:</strong> Arizona components can contain embedded Svelte components, creating a hybrid architecture where server-side state management coexists with client-side reactive components that maintain independent state.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% Architecture Benefits }
+        <div class="mt-12 bg-gradient-to-r from-obsidian/60 to-charcoal/40 rounded-2xl p-8 border border-pearl/10">
+            <h4 class="text-lg font-bold text-pearl mb-4 text-center">Best of Both Worlds</h4>
+            <div class="grid sm:grid-cols-2 gap-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-arizona-teal/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-arizona-teal font-bold">S</span>
+                    </div>
+                    <p class="text-sm text-silver/90">
+                        <span class="text-arizona-teal font-semibold">Svelte components</span> for rich client-side interactions, animations, and immediate user feedback
+                    </p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-arizona-terracotta/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span class="text-arizona-terracotta font-bold">A</span>
+                    </div>
+                    <p class="text-sm text-silver/90">
+                        <span class="text-arizona-terracotta font-semibold">Arizona components</span> for real-time collaboration, live data updates, and server-side business logic
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
     """").
@@ -194,8 +304,8 @@ enhanced_next_steps(_Bindings) ->
                         suffix_text => ~" to customize this page"
                     },
                     #{
-                        prefix_text => ~"Configure routes in ",
-                        filename => ~"config/sys.config"
+                        prefix_text => ~"Add Svelte components in ",
+                        filename => ~"assets/svelte/components/"
                     }
                 ])}
             </div>
@@ -207,12 +317,12 @@ enhanced_next_steps(_Bindings) ->
                     """)
                 end, [
                     #{
-                        prefix_text => ~"Customize styles in ",
-                        filename => ~"assets/css/app.css"
+                        prefix_text => ~"Configure routes in ",
+                        filename => ~"config/sys.config"
                     },
                     #{
-                        prefix_text => ~"Add interactivity in ",
-                        filename => ~"assets/js/main.js"
+                        prefix_text => ~"Customize styles in ",
+                        filename => ~"assets/css/app.css"
                     }
                 ])}
             </div>

@@ -19,30 +19,38 @@
   }
 </script>
 
-<div class="p-4 bg-white rounded-lg shadow-md max-w-sm">
-  <h2 class="text-xl font-bold text-gray-800 mb-4">Counter</h2>
+<div class="w-full">
+  <div class="p-4">
+    <h2 class="text-lg font-bold text-red-500">Svelte Counter (Client-side)</h2>
+    <p class="text-gray-400 text-sm">Independent reactive state</p>
+  </div>
 
-  <div class="text-center">
-    <div class="text-3xl font-bold text-blue-600 mb-4">{count}</div>
+  <div class="p-6">
+    <div class="text-center mb-6">
+      <div class="text-4xl font-bold text-red-500 mb-3">
+        {count}
+      </div>
+      <div class="text-sm text-gray-400">Current value</div>
+    </div>
 
-    <div class="flex gap-2 justify-center">
+    <div class="flex gap-3">
       <button
         onclick={decrement}
-        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+        class="flex-1 py-3 px-4 bg-arizona-terracotta/10 text-arizona-terracotta border border-arizona-terracotta/20 rounded-lg hover:bg-arizona-terracotta/20 hover:border-arizona-terracotta/40 hover:text-arizona-mesa focus:ring-2 focus:ring-arizona-terracotta/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer"
       >
-        -
+        −
       </button>
 
       <button
         onclick={reset}
-        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+        class="flex-1 py-3 px-4 bg-slate/20 text-silver border border-slate/30 rounded-lg hover:bg-slate/30 hover:border-slate/50 hover:text-pearl focus:ring-2 focus:ring-slate/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer"
       >
         Reset
       </button>
 
       <button
         onclick={increment}
-        class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+        class="flex-1 py-3 px-4 bg-arizona-teal/10 text-arizona-teal border border-arizona-teal/20 rounded-lg hover:bg-arizona-teal/20 hover:border-arizona-teal/40 hover:text-arizona-sage focus:ring-2 focus:ring-arizona-teal/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer"
       >
         +
       </button>
