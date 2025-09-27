@@ -1,0 +1,12 @@
+{application, arizona_svelte, [
+    {description, "An Arizona application"},
+    {vsn, "0.1.0"},
+    {mod, {arizona_svelte_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        arizona
+    ]},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+]}.
