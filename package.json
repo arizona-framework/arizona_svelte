@@ -2,15 +2,18 @@
   "name": "arizona_svelte",
   "type": "module",
   "scripts": {
-    "build:js": "esbuild assets/js/main.js --bundle --outfile=priv/static/assets/app.js --minify",
-    "build:css": "npx tailwindcss -i ./assets/css/app.css -o ./priv/static/assets/app.css --minify",
-    "build": "npm run build:js && npm run build:css"
+    "build:js": "node build-js.js",
+    "build:css": "node build-css.js",
+    "build": "npm run build:js && npm run build:css",
+    "build:prod": "NODE_ENV=production npm run build"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.13",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.19.12",
+    "esbuild-svelte": "^0.9.3",
     "postcss": "^8.5.6",
+    "svelte": "^5.39.6",
     "tailwindcss": "^4.1.13"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 @import "tailwindcss";
-@import "./arizona.css";
+/* @import "./arizona.css"; */
 
 @source "src/**/*.erl";
+@source "assets/**/*.svelte";
