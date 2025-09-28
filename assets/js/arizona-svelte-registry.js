@@ -72,6 +72,31 @@ class ArizonaSvelteRegistry {
   }
 
   /**
+   * Register multiple components at once
+   * @param {Object.<string, Function>} components - Object mapping component names to component classes
+   * @returns {number} Number of components registered
+   * @example
+   * registry.registerComponents({
+   *   Counter: CounterComponent,
+   *   HelloWorld: HelloWorldComponent,
+   *   Dashboard: DashboardComponent
+   * });
+   */
+  registerComponents(components) {
+    if (!components || typeof components !== 'object') {
+      throw new Error('Components must be an object mapping names to component classes');
+    }
+
+    let registeredCount = 0;
+    for (const [name, component] of Object.entries(components)) {
+      this.registerComponent(name, component);
+      registeredCount++;
+    }
+
+    return registeredCount;
+  }
+
+  /**
    * Clear all registered components
    */
   clear() {

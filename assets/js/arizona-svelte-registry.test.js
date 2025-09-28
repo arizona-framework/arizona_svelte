@@ -41,4 +41,20 @@ describe('ArizonaSvelteRegistry', () => {
 
     expect(registry.getComponentNames()).toEqual([]);
   });
+
+  it('should register multiple components at once', () => {
+    const components = {
+      Counter: class Counter {},
+      HelloWorld: class HelloWorld {},
+      Dashboard: class Dashboard {},
+    };
+
+    const count = registry.registerComponents(components);
+
+    expect(count).toBe(3);
+    expect(registry.hasComponent('Counter')).toBe(true);
+    expect(registry.hasComponent('HelloWorld')).toBe(true);
+    expect(registry.hasComponent('Dashboard')).toBe(true);
+    expect(registry.getComponentNames()).toEqual(['Counter', 'HelloWorld', 'Dashboard']);
+  });
 });

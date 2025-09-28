@@ -4,13 +4,26 @@
  *
  * @example
  * import ArizonaSvelte from '@arizona-framework/svelte';
+ * import Counter from './svelte/components/Counter.svelte';
+ * import HelloWorld from './svelte/components/HelloWorld.svelte';
  *
+ * // Option 1: Register components in constructor
+ * const arizonaSvelte = new ArizonaSvelte({
+ *   components: {
+ *     Counter,
+ *     HelloWorld
+ *   }
+ * });
+ *
+ * // Option 2: Register components later
  * const arizonaSvelte = new ArizonaSvelte();
+ * arizonaSvelte.registerComponents({ Counter, HelloWorld });
+ *
+ * // Start monitoring
  * arizonaSvelte.startMonitoring();
  */
 
 import { ArizonaSvelteRegistry } from './arizona-svelte-registry.js';
-import { ArizonaSvelteDiscovery } from './arizona-svelte-discovery.js';
 import { ArizonaSvelteLifecycle } from './arizona-svelte-lifecycle.js';
 
 /**
@@ -20,25 +33,16 @@ class ArizonaSvelte {
   /**
    * Create a new ArizonaSvelte instance
    * @param {Object} [options={}] - Configuration options
-   * @param {string} [options.componentsDir] - Directory to search for Svelte components
-   * @param {string} [options.pattern] - File pattern for component discovery
+   * @param {Object.<string, Function>} [options.components] - Components to register on instantiation
    */
   constructor(options = {}) {
     this.registry = new ArizonaSvelteRegistry();
-    this.discovery = new ArizonaSvelteDiscovery({
-      registry: this.registry,
-      componentsDir: options.componentsDir,
-      pattern: options.pattern,
-    });
     this.lifecycle = new ArizonaSvelteLifecycle(this.registry);
-  }
 
-  /**
-   * Initialize component discovery and registration
-   * @returns {Promise<number>} Number of components registered
-   */
-  async init() {
-    return await this.discovery.discoverAndRegister();
+    // Register components if provided
+    if (options.components) {
+      this.registerComponents(options.components);
+    }
   }
 
   /**
@@ -76,14 +80,6 @@ class ArizonaSvelte {
   }
 
   /**
-   * Get the discovery instance
-   * @returns {ArizonaSvelteDiscovery}
-   */
-  getDiscovery() {
-    return this.discovery;
-  }
-
-  /**
    * Get the lifecycle instance
    * @returns {ArizonaSvelteLifecycle}
    */
@@ -96,7 +92,6 @@ class ArizonaSvelte {
    * @returns {Promise<number>} Number of components mounted
    */
   async mountComponents() {
-    await this.init(); // Ensure components are discovered
     return await this.lifecycle.mountComponents();
   }
 
@@ -117,7 +112,6 @@ class ArizonaSvelte {
    * });
    */
   async startMonitoring(options = {}) {
-    await this.init(); // Ensure components are discovered
     this.lifecycle.updateMonitoringOptions(options);
     this.lifecycle.startMonitoring();
   }
@@ -136,6 +130,21 @@ class ArizonaSvelte {
    */
   isMonitoring() {
     return this.lifecycle.isMonitoringActive();
+  }
+
+  /**
+   * Register multiple components at once
+   * @param {Object.<string, Function>} components - Object mapping component names to component classes
+   * @returns {number} Number of components registered
+   * @example
+   * arizonaSvelte.registerComponents({
+   *   Counter: CounterComponent,
+   *   HelloWorld: HelloWorldComponent,
+   *   Dashboard: DashboardComponent
+   * });
+   */
+  registerComponents(components) {
+    return this.registry.registerComponents(components);
   }
 }
 

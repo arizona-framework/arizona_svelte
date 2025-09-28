@@ -1,5 +1,4 @@
 import { ArizonaSvelteRegistry } from './arizona-svelte-registry.js';
-import { ArizonaSvelteDiscovery } from './arizona-svelte-discovery.js';
 import { ArizonaSvelteLifecycle } from './arizona-svelte-lifecycle.js';
 export default ArizonaSvelte;
 /**
@@ -9,21 +8,15 @@ declare class ArizonaSvelte {
     /**
      * Create a new ArizonaSvelte instance
      * @param {Object} [options={}] - Configuration options
-     * @param {string} [options.componentsDir] - Directory to search for Svelte components
-     * @param {string} [options.pattern] - File pattern for component discovery
+     * @param {Object.<string, Function>} [options.components] - Components to register on instantiation
      */
     constructor(options?: {
-        componentsDir?: string | undefined;
-        pattern?: string | undefined;
+        components?: {
+            [x: string]: Function;
+        } | undefined;
     });
     registry: ArizonaSvelteRegistry;
-    discovery: ArizonaSvelteDiscovery;
     lifecycle: ArizonaSvelteLifecycle;
-    /**
-     * Initialize component discovery and registration
-     * @returns {Promise<number>} Number of components registered
-     */
-    init(): Promise<number>;
     /**
      * Get a component by name
      * @param {string} name - Component name
@@ -46,11 +39,6 @@ declare class ArizonaSvelte {
      * @returns {ArizonaSvelteRegistry}
      */
     getRegistry(): ArizonaSvelteRegistry;
-    /**
-     * Get the discovery instance
-     * @returns {ArizonaSvelteDiscovery}
-     */
-    getDiscovery(): ArizonaSvelteDiscovery;
     /**
      * Get the lifecycle instance
      * @returns {ArizonaSvelteLifecycle}
@@ -93,4 +81,18 @@ declare class ArizonaSvelte {
      * @returns {boolean}
      */
     isMonitoring(): boolean;
+    /**
+     * Register multiple components at once
+     * @param {Object.<string, Function>} components - Object mapping component names to component classes
+     * @returns {number} Number of components registered
+     * @example
+     * arizonaSvelte.registerComponents({
+     *   Counter: CounterComponent,
+     *   HelloWorld: HelloWorldComponent,
+     *   Dashboard: DashboardComponent
+     * });
+     */
+    registerComponents(components: {
+        [x: string]: Function;
+    }): number;
 }
