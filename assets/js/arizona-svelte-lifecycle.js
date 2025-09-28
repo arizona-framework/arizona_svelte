@@ -1,11 +1,33 @@
 /**
- * Arizona Svelte Lifecycle
- * Handles component mounting, unmounting, and lifecycle management
+ * Arizona Svelte Lifecycle Management
+ * Handles automatic mounting, unmounting, and monitoring of Svelte components
+ * in response to DOM changes. Integrates with Arizona Framework's real-time updates.
+ *
+ * @example
+ * const lifecycle = new ArizonaSvelteLifecycle(registry);
+ * lifecycle.startMonitoring({
+ *   autoMount: true,
+ *   autoUnmount: true,
+ *   debounceMs: 0
+ * });
  */
 
 import { mount, unmount } from 'svelte';
 
+/**
+ * Lifecycle manager for Svelte components
+ */
 class ArizonaSvelteLifecycle {
+  /**
+   * Create a new lifecycle manager
+   * @param {ArizonaSvelteRegistry} registry - Component registry instance
+   * @param {Object} [options={}] - Lifecycle options
+   * @param {boolean} [options.autoMount=true] - Automatically mount new components
+   * @param {boolean} [options.autoUnmount=true] - Automatically unmount removed components
+   * @param {boolean} [options.observeSubtree=true] - Monitor entire DOM tree
+   * @param {number} [options.debounceMs=0] - Debounce delay in milliseconds
+   * @throws {Error} If registry is not provided
+   */
   constructor(registry, options = {}) {
     if (!registry) {
       throw new Error('ArizonaSvelteLifecycle requires a registry instance');
@@ -19,20 +41,25 @@ class ArizonaSvelteLifecycle {
       autoMount: options.autoMount !== false, // Default true
       autoUnmount: options.autoUnmount !== false, // Default true
       observeSubtree: options.observeSubtree !== false, // Default true
-      debounceMs: options.debounceMs || 100, // Debounce DOM changes
-      ...options
+      debounceMs: options.debounceMs || 0, // Debounce DOM changes
+      ...options,
     };
     this.debounceTimer = null;
   }
 
   /**
    * Mount Svelte components from DOM data attributes
-   * @returns {Promise<number>} Number of components mounted */
+   * Searches for elements with data-svelte-component attribute and mounts the corresponding components
+   * @returns {Promise<number>} Number of components successfully mounted
+   * @example
+   * // HTML: <div data-svelte-component="Counter" data-svelte-props='{"count": 0}'></div>
+   * const mounted = await lifecycle.mountComponents();
+   */
   async mountComponents() {
     const svelteTargets = document.querySelectorAll('[data-svelte-component]');
     let mountedCount = 0;
 
-    svelteTargets.forEach(target => {
+    svelteTargets.forEach((target) => {
       // Skip if already mounted
       if (this.mountedComponents.has(target)) {
         return;
@@ -51,7 +78,7 @@ class ArizonaSvelteLifecycle {
           console.log(`[Arizona Svelte] ✅ Mounted '${componentName}' component`, {
             target: target.id || target.className || 'unnamed',
             props,
-            totalMounted: this.mountedComponents.size
+            totalMounted: this.mountedComponents.size,
           });
         } catch (error) {
           console.error(`[Arizona Svelte] ❌ Failed to mount component '${componentName}':`, error);
@@ -82,7 +109,7 @@ class ArizonaSvelteLifecycle {
         this.mountedComponents.delete(target);
         console.log(`[Arizona Svelte] 🗑️ Unmounted '${componentName}' component`, {
           target: target.id || target.className || 'unnamed',
-          totalMounted: this.mountedComponents.size
+          totalMounted: this.mountedComponents.size,
         });
         return true;
       } catch (error) {
@@ -190,7 +217,7 @@ class ArizonaSvelteLifecycle {
     console.log('[Arizona Svelte] Stopping automatic component monitoring');
 
     // Clean up all observers
-    this.observers.forEach(observer => {
+    this.observers.forEach((observer) => {
       if (observer.disconnect) {
         observer.disconnect();
       } else if (typeof observer === 'function') {
@@ -219,7 +246,7 @@ class ArizonaSvelteLifecycle {
       childList: true,
       subtree: this.options.observeSubtree,
       attributes: true,
-      attributeFilter: ['data-svelte-component', 'data-svelte-props']
+      attributeFilter: ['data-svelte-component', 'data-svelte-props'],
     });
 
     this.observers.add(observer);
@@ -231,9 +258,7 @@ class ArizonaSvelteLifecycle {
    */
   setupArizonaListener() {
     const handleArizonaEvent = (event) => {
-      const { type, data } = event.detail;
-
-      if (type === 'html_patch') {
+      if (event.detail.type === 'html_patch') {
         // When Arizona applies HTML patches, we need to check for new components
         this.debouncedScanAndMount();
       }
@@ -332,10 +357,10 @@ class ArizonaSvelteLifecycle {
     let shouldScan = false;
     const removedNodes = new Set();
 
-    mutations.forEach(mutation => {
+    mutations.forEach((mutation) => {
       // Handle removed nodes
       if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
-        mutation.removedNodes.forEach(node => {
+        mutation.removedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             removedNodes.add(node);
             // Check if removed node or its children had mounted components
@@ -347,9 +372,11 @@ class ArizonaSvelteLifecycle {
       // Handle added nodes or attribute changes
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         shouldScan = true;
-      } else if (mutation.type === 'attributes' &&
+      } else if (
+        mutation.type === 'attributes' &&
         (mutation.attributeName === 'data-svelte-component' ||
-          mutation.attributeName === 'data-svelte-props')) {
+          mutation.attributeName === 'data-svelte-props')
+      ) {
         shouldScan = true;
       }
     });
@@ -392,7 +419,7 @@ class ArizonaSvelteLifecycle {
     // Check children of removed node
     if (removedNode.querySelectorAll) {
       const childTargets = removedNode.querySelectorAll('[data-svelte-component]');
-      childTargets.forEach(target => {
+      childTargets.forEach((target) => {
         if (this.mountedComponents.has(target)) {
           console.log('[Arizona Svelte] Auto-unmounting removed child component');
           this.unmountComponent(target);

@@ -1,19 +1,34 @@
 /**
  * Arizona Svelte Integration
- * Main class for Svelte component management
+ * Main class for Svelte component management with automatic lifecycle monitoring
+ *
+ * @example
+ * import ArizonaSvelte from '@arizona-framework/svelte';
+ *
+ * const arizonaSvelte = new ArizonaSvelte();
+ * arizonaSvelte.startMonitoring();
  */
 
 import { ArizonaSvelteRegistry } from './arizona-svelte-registry.js';
 import { ArizonaSvelteDiscovery } from './arizona-svelte-discovery.js';
 import { ArizonaSvelteLifecycle } from './arizona-svelte-lifecycle.js';
 
+/**
+ * Main Arizona Svelte integration class
+ */
 class ArizonaSvelte {
+  /**
+   * Create a new ArizonaSvelte instance
+   * @param {Object} [options={}] - Configuration options
+   * @param {string} [options.componentsDir] - Directory to search for Svelte components
+   * @param {string} [options.pattern] - File pattern for component discovery
+   */
   constructor(options = {}) {
     this.registry = new ArizonaSvelteRegistry();
     this.discovery = new ArizonaSvelteDiscovery({
       registry: this.registry,
-      componentsDir: options.componentsDir || '../svelte/components',
-      pattern: options.pattern || '*.svelte'
+      componentsDir: options.componentsDir,
+      pattern: options.pattern,
     });
     this.lifecycle = new ArizonaSvelteLifecycle(this.registry);
   }
@@ -88,8 +103,18 @@ class ArizonaSvelte {
   /**
    * Start automatic monitoring for component lifecycle
    * This will automatically mount/unmount components when DOM changes
-   * @param {Object} options - Monitoring options
+   * @param {Object} [options={}] - Monitoring options
+   * @param {boolean} [options.autoMount=true] - Automatically mount new components
+   * @param {boolean} [options.autoUnmount=true] - Automatically unmount removed components
+   * @param {boolean} [options.observeSubtree=true] - Monitor entire DOM tree
+   * @param {number} [options.debounceMs=0] - Debounce delay in milliseconds
    * @returns {Promise<void>}
+   * @example
+   * arizonaSvelte.startMonitoring({
+   *   autoMount: true,
+   *   autoUnmount: true,
+   *   debounceMs: 0
+   * });
    */
   async startMonitoring(options = {}) {
     await this.init(); // Ensure components are discovered
@@ -112,15 +137,6 @@ class ArizonaSvelte {
   isMonitoring() {
     return this.lifecycle.isMonitoringActive();
   }
-
-  /**
-   * Get lifecycle management instance
-   * @returns {ArizonaSvelteLifecycle}
-   */
-  getLifecycle() {
-    return this.lifecycle;
-  }
 }
 
 export default ArizonaSvelte;
-export { ArizonaSvelte };

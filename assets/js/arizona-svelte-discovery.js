@@ -1,13 +1,27 @@
 /**
  * Svelte Components Auto-Discovery
- * Flexible component discovery and registration system
+ * Automatically discovers and registers Svelte components using Vite's import.meta.glob
+ *
+ * @example
+ * const discovery = new ArizonaSvelteDiscovery({ registry });
+ * await discovery.discoverAndRegister();
  */
 
+/**
+ * Component discovery system for Svelte components
+ */
 class ArizonaSvelteDiscovery {
+  /**
+   * Create a new discovery instance
+   * @param {Object} [options={}] - Configuration options
+   * @param {string} [options.componentsDir] - Directory to search for components
+   * @param {string} [options.pattern] - File pattern for component discovery
+   * @param {ArizonaSvelteRegistry} options.registry - Registry instance for component registration
+   */
   constructor(options = {}) {
     this.componentsDir = options.componentsDir || '../svelte/components';
     this.pattern = options.pattern || '*.svelte';
-    this.registry = options.registry || { registerComponent };
+    this.registry = options.registry;
     this.componentModules = null;
   }
 
@@ -23,8 +37,10 @@ class ArizonaSvelteDiscovery {
   }
 
   /**
-   * Register all discovered components
-   * @param {Object} componentModules - Optional modules object, uses discovered if not provided
+   * Register all discovered components with the registry
+   * @param {Object|null} [componentModules=null] - Optional modules object, uses discovered if not provided
+   * @returns {number} Number of components registered
+   * @throws {Error} If no components have been discovered
    */
   registerComponents(componentModules = null) {
     const modules = componentModules || this.componentModules;
@@ -41,7 +57,9 @@ class ArizonaSvelteDiscovery {
       this.registry.registerComponent(componentName, module.default);
     });
 
-    console.log(`[Arizona Svelte] Auto-discovered and registered ${Object.keys(modules).length} components`);
+    console.log(
+      `[Arizona Svelte] Auto-discovered and registered ${Object.keys(modules).length} components`
+    );
     return Object.keys(modules).length;
   }
 

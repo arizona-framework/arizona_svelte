@@ -1,9 +1,20 @@
 /**
  * Svelte Component Registry
- * Manages dynamic loading and mounting of Svelte components
+ * Manages registration and retrieval of Svelte components
+ *
+ * @example
+ * const registry = new ArizonaSvelteRegistry();
+ * registry.registerComponent('Counter', CounterComponent);
+ * const component = registry.getComponent('Counter');
  */
 
+/**
+ * Registry for managing Svelte components
+ */
 class ArizonaSvelteRegistry {
+  /**
+   * Create a new component registry
+   */
   constructor() {
     this.components = new Map();
   }
