@@ -94,14 +94,28 @@ my_page(_Bindings) ->
     """).
 ```
 
-### 2. JavaScript Side - Initialize Svelte Integration
+### 2. JavaScript Side - Register Components and Initialize
 
 ```javascript
 // assets/js/main.js
 import ArizonaSvelte from '@arizona-framework/svelte';
+import Counter from '../svelte/components/Counter.svelte';
+import HelloWorld from '../svelte/components/HelloWorld.svelte';
 
-// Initialize Arizona Svelte
-const arizonaSvelte = new ArizonaSvelte();
+// Option 1: Register components in constructor (recommended)
+const arizonaSvelte = new ArizonaSvelte({
+  components: {
+    Counter,
+    HelloWorld
+  }
+});
+
+// Option 2: Register components manually
+// const arizonaSvelte = new ArizonaSvelte();
+// arizonaSvelte.registerComponents({
+//   Counter,
+//   HelloWorld
+// });
 
 // Start automatic component lifecycle monitoring
 arizonaSvelte.startMonitoring({
@@ -113,6 +127,28 @@ arizonaSvelte.startMonitoring({
 
 // Make available globally for debugging
 globalThis.arizonaSvelte = arizonaSvelte;
+```
+
+### Alternative: Using an Index File
+
+Create a centralized component index:
+
+```javascript
+// svelte/components/index.js
+export { default as Counter } from './Counter.svelte';
+export { default as HelloWorld } from './HelloWorld.svelte';
+export { default as Dashboard } from './Dashboard.svelte';
+```
+
+Then import all at once:
+
+```javascript
+// assets/js/main.js
+import ArizonaSvelte from '@arizona-framework/svelte';
+import * as components from '../svelte/components/index.js';
+
+const arizonaSvelte = new ArizonaSvelte({ components });
+arizonaSvelte.startMonitoring();
 ```
 
 ### 3. Create Your Svelte Components
@@ -136,9 +172,9 @@ globalThis.arizonaSvelte = arizonaSvelte;
 
 - **🔄 Automatic Lifecycle Management**: Components mount/unmount automatically
 when DOM changes
-- **🏗️ Component Discovery**: Auto-discovers and registers Svelte components
+- **🏗️ Flexible Component Registration**: Register components via constructor or batch methods
 - **📡 Real-time Integration**: Works seamlessly with Arizona's WebSocket updates
-- **🎯 Minimal Configuration**: Just install and start monitoring
+- **🎯 Simple Setup**: Register components and start monitoring in a few lines
 - **🧪 Development Friendly**: Built-in logging and debugging support
 - **⚡ High Performance**: Zero-debounce monitoring for immediate responsiveness
 
@@ -181,6 +217,30 @@ arizona_svelte:render_component(Component, Props) -> Template.
 
 Creates a new Arizona Svelte instance.
 
+**Options:**
+
+- `components: Object` - Components to register on instantiation
+
+```javascript
+const arizonaSvelte = new ArizonaSvelte({
+  components: {
+    Counter: CounterComponent,
+    HelloWorld: HelloWorldComponent
+  }
+});
+```
+
+#### `arizonaSvelte.registerComponents(components)`
+
+Register multiple components at once.
+
+```javascript
+arizonaSvelte.registerComponents({
+  Dashboard: DashboardComponent,
+  Modal: ModalComponent
+});
+```
+
 #### `arizonaSvelte.startMonitoring(options?)`
 
 Starts automatic component lifecycle monitoring.
@@ -198,6 +258,9 @@ Starts automatic component lifecycle monitoring.
 - `arizonaSvelte.isMonitoring()` - Check if monitoring is active
 - `arizonaSvelte.getRegistry()` - Get component registry
 - `arizonaSvelte.getLifecycle()` - Get lifecycle manager
+- `arizonaSvelte.getComponent(name)` - Get a specific component
+- `arizonaSvelte.hasComponent(name)` - Check if component is registered
+- `arizonaSvelte.getComponentNames()` - Get all registered component names
 
 ## Requirements
 

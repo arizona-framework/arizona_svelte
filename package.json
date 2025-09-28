@@ -1,6 +1,6 @@
 {
   "name": "@arizona-framework/svelte",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Svelte integration library for Arizona Framework",
   "type": "module",
   "main": "./assets/js/arizona-svelte.js",

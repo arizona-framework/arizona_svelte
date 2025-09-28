@@ -43,9 +43,34 @@ describe('ArizonaSvelte', () => {
     expect(registry.getComponentNames()).toEqual(['Test']);
   });
 
-  it('should auto-discover components on instantiation', () => {
-    // This tests that discovery runs without throwing
+  it('should start with no components registered', () => {
     const newInstance = new ArizonaSvelte();
     expect(newInstance.getRegistry().getComponentNames()).toEqual([]);
+  });
+
+  it('should register multiple components at once', () => {
+    const components = {
+      Counter: class Counter {},
+      HelloWorld: class HelloWorld {},
+    };
+
+    const count = arizonaSvelte.registerComponents(components);
+
+    expect(count).toBe(2);
+    expect(arizonaSvelte.hasComponent('Counter')).toBe(true);
+    expect(arizonaSvelte.hasComponent('HelloWorld')).toBe(true);
+  });
+
+  it('should register components in constructor', () => {
+    const components = {
+      Test1: class Test1 {},
+      Test2: class Test2 {},
+    };
+
+    const instance = new ArizonaSvelte({ components });
+
+    expect(instance.hasComponent('Test1')).toBe(true);
+    expect(instance.hasComponent('Test2')).toBe(true);
+    expect(instance.getComponentNames()).toEqual(['Test1', 'Test2']);
   });
 });
