@@ -84,6 +84,42 @@ class ArizonaSvelte {
     await this.init(); // Ensure components are discovered
     return await this.lifecycle.mountComponents();
   }
+
+  /**
+   * Start automatic monitoring for component lifecycle
+   * This will automatically mount/unmount components when DOM changes
+   * @param {Object} options - Monitoring options
+   * @returns {Promise<void>}
+   */
+  async startMonitoring(options = {}) {
+    await this.init(); // Ensure components are discovered
+    this.lifecycle.updateMonitoringOptions(options);
+    this.lifecycle.startMonitoring();
+  }
+
+  /**
+   * Stop automatic monitoring
+   * @returns {void}
+   */
+  stopMonitoring() {
+    this.lifecycle.stopMonitoring();
+  }
+
+  /**
+   * Check if monitoring is active
+   * @returns {boolean}
+   */
+  isMonitoring() {
+    return this.lifecycle.isMonitoringActive();
+  }
+
+  /**
+   * Get lifecycle management instance
+   * @returns {ArizonaSvelteLifecycle}
+   */
+  getLifecycle() {
+    return this.lifecycle;
+  }
 }
 
 export default ArizonaSvelte;
