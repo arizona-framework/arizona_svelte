@@ -1,12 +1,13 @@
 {application, arizona_svelte, [
-    {description, "An Arizona application"},
+    {description, "Svelte integration library for Arizona Framework"},
     {vsn, "0.1.0"},
-    {mod, {arizona_svelte_app, []}},
+    {registered, []},
     {applications, [
         kernel,
-        stdlib,
-        arizona
+        stdlib
     ]},
+    {env, []},
+    {modules, []},
     {licenses, ["Apache-2.0"]},
-    {links, []}
+    {links, [{"GitHub", "https://github.com/arizona-framework/arizona_svelte"}]}
 ]}.

@@ -1,19 +1,83 @@
 {
-  "name": "arizona_svelte",
+  "name": "@arizona-framework/svelte",
+  "version": "0.1.0",
+  "description": "Svelte integration library for Arizona Framework",
   "type": "module",
+  "main": "./assets/js/arizona-svelte.js",
+  "module": "./assets/js/arizona-svelte.js",
+  "exports": {
+    ".": {
+      "import": "./assets/js/arizona-svelte.js",
+      "require": "./assets/js/arizona-svelte.js"
+    }
+  },
+  "files": ["README.md", "LICENSE.md", "package.json", "assets/js/**/*"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arizona-framework/arizona_svelte.git"
+  },
+  "homepage": "https://github.com/arizona-framework/arizona_svelte",
+  "bugs": {
+    "url": "https://github.com/arizona-framework/arizona_svelte/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "browserslist": ["defaults", "not IE 11"],
+  "keywords": [
+    "arizona",
+    "framework",
+    "svelte",
+    "javascript",
+    "client",
+    "websocket",
+    "realtime",
+    "component",
+    "lifecycle"
+  ],
+  "author": "William Fank Thomé <willilamthome@hotmail.com>",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build:js": "esbuild assets/js/main.js --bundle --outfile=priv/static/assets/app.js --minify",
-    "build:css": "npx tailwindcss -i ./assets/css/app.css -o ./priv/static/assets/app.css --minify",
-    "build": "npm run build:js && npm run build:css"
+    "build": "vite build",
+    "build:analyze": "ANALYZE=true vite build",
+    "build:dev": "vite build --mode development",
+    "format": "prettier --write \"./assets/**/*.js\" \"**/*.json\" \"**/*.yml\" --config prettier.config.js --ignore-path .gitignore --ignore-path .prettierignore",
+    "format:check": "prettier --check \"./assets/**/*.js\" \"**/*.json\" \"**/*.yml\" --config prettier.config.js --ignore-path .gitignore --ignore-path .prettierignore",
+    "lint:js": "eslint assets/js/**/*.js --fix",
+    "lint:js:check": "eslint assets/js/**/*.js",
+    "lint:md": "markdownlint-cli2 \"*.md\"",
+    "lint": "npm run lint:js && npm run lint:md",
+    "lint:check": "npm run lint:js:check && npm run lint:md",
+    "format:lint": "npm run format && npm run lint",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "ci": "npm run format:check && npm run lint:check && npm test",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "svelte": "5.39.6"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.13",
-    "autoprefixer": "^10.4.21",
-    "esbuild": "^0.19.12",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13"
-  },
-  "dependencies": {
-    "@arizona-framework/client": "^0.1.2"
+    "@eslint/js": "9.36.0",
+    "@playwright/test": "1.55.1",
+    "@vitest/coverage-v8": "3.2.4",
+    "eslint": "9.36.0",
+    "globals": "16.4.0",
+    "markdownlint-cli2": "0.18.1",
+    "prettier": "3.6.2",
+    "rollup-plugin-banner2": "1.3.1",
+    "rollup-plugin-filesize": "10.0.0",
+    "rollup-plugin-license": "3.6.0",
+    "rollup-plugin-visualizer": "6.0.3",
+    "uglify-js": "3.19.3",
+    "vite": "7.1.7",
+    "vite-plugin-dts": "4.5.4",
+    "vite-plugin-eslint": "1.8.1",
+    "vite-tsconfig-paths": "5.1.4",
+    "vitest": "3.2.4"
   }
 }

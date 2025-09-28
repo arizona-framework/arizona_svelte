@@ -1,11 +1,7 @@
 {"1.2.0",
 [{<<"arizona">>,
   {git,"https://github.com/arizona-framework/arizona.git",
-       {ref,"81fa719ab5a53864bd7d3b5172c3cdc70eccb4fa"}},
-  0},
- {<<"arizona_rebar3_plugin">>,
-  {git,"https://github.com/arizona-framework/arizona_rebar3_plugin",
-       {ref,"1f557dc663f74b24ca29820a83294cb158638c7a"}},
+       {ref,"0d11908a22c22f395e0d190e4211304337fcb6c4"}},
   0},
  {<<"cowboy">>,{pkg,<<"cowboy">>,<<"2.14.0">>},1},
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"2.16.0">>},2},
@@ -13,7 +9,7 @@
   {git_subdir,"https://github.com/whatsapp/eqwalizer.git",
               {ref,"c4d1098174cec06bd124855f3a28dfd6eda0a581"},
               "eqwalizer_support"},
-  1},
+  0},
  {<<"fs">>,{pkg,<<"fs">>,<<"11.4.1">>},1},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"2.2.0">>},2}]}.
 [
