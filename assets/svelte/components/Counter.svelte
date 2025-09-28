@@ -1,5 +1,5 @@
 <script>
-  let { initialCount = 0 } = $props();
+  let { title = "Svelte Counter", initialCount = 0 } = $props();
   let count = $state(initialCount);
 
   $effect(() => {
@@ -21,7 +21,7 @@
 
 <div class="w-full">
   <div class="p-4">
-    <h2 class="text-lg font-bold text-red-500">Svelte Counter (Client-side)</h2>
+    <h2 class="text-lg font-bold text-red-500">{title}</h2>
     <p class="text-gray-400 text-sm">Independent reactive state</p>
   </div>
 

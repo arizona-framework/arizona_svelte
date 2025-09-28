@@ -70,6 +70,7 @@ render(Bindings) ->
                 ↳ Svelte Component embedded inside Arizona Stateful Component
             </div>
             {arizona_svelte:render_component(~"Counter", #{
+                title => ~"Svelte Counter (Client-side)",
                 initialCount => arizona_template:get_binding(count, Bindings)
             })}
         </div>

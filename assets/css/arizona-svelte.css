@@ -154,6 +154,7 @@
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
+  background-blend-mode: color-burn;
 }
 
 /* Ensure the overlay creates depth */

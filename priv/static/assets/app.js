@@ -356,14 +356,21 @@ const PUBLIC_VERSION = "5";
 if (typeof window !== "undefined") {
   ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add(PUBLIC_VERSION);
 }
+const EACH_ITEM_REACTIVE = 1;
+const EACH_INDEX_REACTIVE = 1 << 1;
+const EACH_IS_CONTROLLED = 1 << 2;
+const EACH_IS_ANIMATED = 1 << 3;
+const EACH_ITEM_IMMUTABLE = 1 << 4;
 const TEMPLATE_USE_IMPORT_NODE = 1 << 1;
 const UNINITIALIZED = Symbol();
+const NAMESPACE_HTML = "http://www.w3.org/1999/xhtml";
 const DEV = false;
 var is_array = Array.isArray;
 var index_of = Array.prototype.indexOf;
 var array_from = Array.from;
 var define_property = Object.defineProperty;
 var get_descriptor = Object.getOwnPropertyDescriptor;
+var get_descriptors = Object.getOwnPropertyDescriptors;
 var object_prototype = Object.prototype;
 var array_prototype = Array.prototype;
 var get_prototype_of = Object.getPrototypeOf;
@@ -460,8 +467,15 @@ function svelte_boundary_reset_noop() {
     console.warn(`https://svelte.dev/e/svelte_boundary_reset_noop`);
   }
 }
+let hydrating = false;
 function equals(value) {
   return value === this.v;
+}
+function safe_not_equal(a, b) {
+  return a != a ? b == b : a !== b || a !== null && typeof a === "object" || typeof a === "function";
+}
+function safe_equals(value) {
+  return !safe_not_equal(value, this.v);
 }
 let tracing_mode_flag = false;
 let component_context = null;
@@ -1393,6 +1407,12 @@ function async_derived(fn, location) {
     next(promise);
   });
 }
+// @__NO_SIDE_EFFECTS__
+function derived_safe_equal(fn) {
+  const signal = /* @__PURE__ */ derived(fn);
+  signal.equals = safe_equals;
+  return signal;
+}
 function destroy_derived_effects(derived2) {
   var effects = derived2.effects;
   if (effects !== null) {
@@ -1463,6 +1483,14 @@ function source(v, stack) {
 function state(v, stack) {
   const s = source(v);
   push_reaction_value(s);
+  return s;
+}
+// @__NO_SIDE_EFFECTS__
+function mutable_source(initial_value, immutable = false, trackable = true) {
+  const s = source(initial_value);
+  if (!immutable) {
+    s.equals = safe_equals;
+  }
   return s;
 }
 function set(source2, value, should_proxy = false) {
@@ -1774,6 +1802,19 @@ function child(node, is_text) {
     return /* @__PURE__ */ get_first_child(node);
   }
 }
+function first_child(fragment, is_text = false) {
+  {
+    var first = (
+      /** @type {DocumentFragment} */
+      /* @__PURE__ */ get_first_child(
+        /** @type {Node} */
+        fragment
+      )
+    );
+    if (first instanceof Comment && first.data === "") return /* @__PURE__ */ get_next_sibling(first);
+    return first;
+  }
+}
 function sibling(node, count = 1, is_text = false) {
   let next_sibling = node;
   while (count--) {
@@ -1783,6 +1824,12 @@ function sibling(node, count = 1, is_text = false) {
   {
     return next_sibling;
   }
+}
+function clear_text_content(node) {
+  node.textContent = "";
+}
+function should_defer_append() {
+  return false;
 }
 function without_reactive_context(fn) {
   var previous_reaction = active_reaction;
@@ -1876,6 +1923,12 @@ function create_effect(type, fn, sync, push2 = true) {
 function effect_tracking() {
   return active_reaction !== null && !untracking;
 }
+function teardown(fn) {
+  const effect = create_effect(RENDER_EFFECT, null, false);
+  set_signal_status(effect, CLEAN);
+  effect.teardown = fn;
+  return effect;
+}
 function user_effect(fn) {
   validate_effect();
   var flags2 = (
@@ -1932,14 +1985,14 @@ function branch(fn, push2 = true) {
   return create_effect(BRANCH_EFFECT | EFFECT_PRESERVED, fn, true, push2);
 }
 function execute_effect_teardown(effect) {
-  var teardown = effect.teardown;
-  if (teardown !== null) {
+  var teardown2 = effect.teardown;
+  if (teardown2 !== null) {
     const previously_destroying_effect = is_destroying_effect;
     const previous_reaction = active_reaction;
     set_is_destroying_effect(true);
     set_active_reaction(null);
     try {
-      teardown.call(null);
+      teardown2.call(null);
     } finally {
       set_is_destroying_effect(previously_destroying_effect);
       set_active_reaction(previous_reaction);
@@ -2057,6 +2110,31 @@ function pause_children(effect, transitions, local) {
     var transparent = (child2.f & EFFECT_TRANSPARENT) !== 0 || (child2.f & BRANCH_EFFECT) !== 0;
     pause_children(child2, transitions, transparent ? local : false);
     child2 = sibling2;
+  }
+}
+function resume_effect(effect) {
+  resume_children(effect, true);
+}
+function resume_children(effect, local) {
+  if ((effect.f & INERT) === 0) return;
+  effect.f ^= INERT;
+  if ((effect.f & CLEAN) === 0) {
+    set_signal_status(effect, DIRTY);
+    schedule_effect(effect);
+  }
+  var child2 = effect.first;
+  while (child2 !== null) {
+    var sibling2 = child2.next;
+    var transparent = (child2.f & EFFECT_TRANSPARENT) !== 0 || (child2.f & BRANCH_EFFECT) !== 0;
+    resume_children(child2, transparent ? local : false);
+    child2 = sibling2;
+  }
+  if (effect.transitions !== null) {
+    for (const transition of effect.transitions) {
+      if (transition.is_global || local) {
+        transition.in();
+      }
+    }
   }
 }
 let is_updating_effect = false;
@@ -2339,8 +2417,8 @@ function update_effect(effect) {
       destroy_effect_children(effect);
     }
     execute_effect_teardown(effect);
-    var teardown = update_reaction(effect);
-    effect.teardown = typeof teardown === "function" ? teardown : null;
+    var teardown2 = update_reaction(effect);
+    effect.teardown = typeof teardown2 === "function" ? teardown2 : null;
     effect.wv = write_version;
     var dep;
     if (DEV && tracing_mode_flag && (effect.f & DIRTY) !== 0 && effect.deps !== null) ;
@@ -2446,6 +2524,38 @@ function set_signal_status(signal, status) {
 }
 const all_registered_events = /* @__PURE__ */ new Set();
 const root_event_handles = /* @__PURE__ */ new Set();
+function create_event(event_name, dom, handler, options = {}) {
+  function target_handler(event2) {
+    if (!options.capture) {
+      handle_event_propagation.call(dom, event2);
+    }
+    if (!event2.cancelBubble) {
+      return without_reactive_context(() => {
+        return handler?.call(this, event2);
+      });
+    }
+  }
+  if (event_name.startsWith("pointer") || event_name.startsWith("touch") || event_name === "wheel") {
+    queue_micro_task(() => {
+      dom.addEventListener(event_name, target_handler, options);
+    });
+  } else {
+    dom.addEventListener(event_name, target_handler, options);
+  }
+  return target_handler;
+}
+function event(event_name, dom, handler, capture2, passive) {
+  var options = { capture: capture2, passive };
+  var target_handler = create_event(event_name, dom, handler, options);
+  if (dom === document.body || // @ts-ignore
+  dom === window || // @ts-ignore
+  dom === document || // Firefox has quirky behavior, it can happen that we still get "canplay" events when the element is already removed
+  dom instanceof HTMLMediaElement) {
+    teardown(() => {
+      dom.removeEventListener(event_name, target_handler, options);
+    });
+  }
+}
 function delegate(events) {
   for (var i = 0; i < events.length; i++) {
     all_registered_events.add(events[i]);
@@ -2455,26 +2565,26 @@ function delegate(events) {
   }
 }
 let last_propagated_event = null;
-function handle_event_propagation(event) {
+function handle_event_propagation(event2) {
   var handler_element = this;
   var owner_document = (
     /** @type {Node} */
     handler_element.ownerDocument
   );
-  var event_name = event.type;
-  var path = event.composedPath?.() || [];
+  var event_name = event2.type;
+  var path = event2.composedPath?.() || [];
   var current_target = (
     /** @type {null | Element} */
-    path[0] || event.target
+    path[0] || event2.target
   );
-  last_propagated_event = event;
+  last_propagated_event = event2;
   var path_idx = 0;
-  var handled_at = last_propagated_event === event && event.__root;
+  var handled_at = last_propagated_event === event2 && event2.__root;
   if (handled_at) {
     var at_idx = path.indexOf(handled_at);
     if (at_idx !== -1 && (handler_element === document || handler_element === /** @type {any} */
     window)) {
-      event.__root = handler_element;
+      event2.__root = handler_element;
       return;
     }
     var handler_idx = path.indexOf(handler_element);
@@ -2486,9 +2596,9 @@ function handle_event_propagation(event) {
     }
   }
   current_target = /** @type {Element} */
-  path[path_idx] || event.target;
+  path[path_idx] || event2.target;
   if (current_target === handler_element) return;
-  define_property(event, "currentTarget", {
+  define_property(event2, "currentTarget", {
     configurable: true,
     get() {
       return current_target || owner_document;
@@ -2509,12 +2619,12 @@ function handle_event_propagation(event) {
         if (delegated != null && (!/** @type {any} */
         current_target.disabled || // DOM could've been updated already by the time this is reached, so we check this as well
         // -> the target could not have been disabled because it emits the event in the first place
-        event.target === current_target)) {
+        event2.target === current_target)) {
           if (is_array(delegated)) {
             var [fn, ...data] = delegated;
-            fn.apply(current_target, [event, ...data]);
+            fn.apply(current_target, [event2, ...data]);
           } else {
-            delegated.call(current_target, event);
+            delegated.call(current_target, event2);
           }
         }
       } catch (error) {
@@ -2524,7 +2634,7 @@ function handle_event_propagation(event) {
           throw_error = error;
         }
       }
-      if (event.cancelBubble || parent_element === handler_element || parent_element === null) {
+      if (event2.cancelBubble || parent_element === handler_element || parent_element === null) {
         break;
       }
       current_target = parent_element;
@@ -2538,8 +2648,8 @@ function handle_event_propagation(event) {
       throw throw_error;
     }
   } finally {
-    event.__root = handler_element;
-    delete event.currentTarget;
+    event2.__root = handler_element;
+    delete event2.currentTarget;
     set_active_reaction(previous_reaction);
     set_active_effect(previous_effect);
   }
@@ -2579,6 +2689,14 @@ function from_html(content, flags2) {
     }
     return clone;
   };
+}
+function comment() {
+  var frag = document.createDocumentFragment();
+  var start = document.createComment("");
+  var anchor = create_text();
+  frag.append(start, anchor);
+  assign_nodes(start, anchor);
+  return frag;
 }
 function append(anchor, dom) {
   if (anchor === null) {
@@ -2685,6 +2803,527 @@ function unmount(component, options) {
   }
   return Promise.resolve();
 }
+function if_block(node, fn, elseif = false) {
+  var anchor = node;
+  var consequent_effect = null;
+  var alternate_effect = null;
+  var condition = UNINITIALIZED;
+  var flags2 = elseif ? EFFECT_TRANSPARENT : 0;
+  var has_branch = false;
+  const set_branch = (fn2, flag = true) => {
+    has_branch = true;
+    update_branch(flag, fn2);
+  };
+  var offscreen_fragment = null;
+  function commit() {
+    if (offscreen_fragment !== null) {
+      offscreen_fragment.lastChild.remove();
+      anchor.before(offscreen_fragment);
+      offscreen_fragment = null;
+    }
+    var active = condition ? consequent_effect : alternate_effect;
+    var inactive = condition ? alternate_effect : consequent_effect;
+    if (active) {
+      resume_effect(active);
+    }
+    if (inactive) {
+      pause_effect(inactive, () => {
+        if (condition) {
+          alternate_effect = null;
+        } else {
+          consequent_effect = null;
+        }
+      });
+    }
+  }
+  const update_branch = (new_condition, fn2) => {
+    if (condition === (condition = new_condition)) return;
+    var defer = should_defer_append();
+    var target = anchor;
+    if (defer) {
+      offscreen_fragment = document.createDocumentFragment();
+      offscreen_fragment.append(target = create_text());
+    }
+    if (condition) {
+      consequent_effect ??= fn2 && branch(() => fn2(target));
+    } else {
+      alternate_effect ??= fn2 && branch(() => fn2(target));
+    }
+    if (defer) {
+      var batch = (
+        /** @type {Batch} */
+        current_batch
+      );
+      var active = condition ? consequent_effect : alternate_effect;
+      var inactive = condition ? alternate_effect : consequent_effect;
+      if (active) batch.skipped_effects.delete(active);
+      if (inactive) batch.skipped_effects.add(inactive);
+      batch.add_callback(commit);
+    } else {
+      commit();
+    }
+  };
+  block(() => {
+    has_branch = false;
+    fn(set_branch);
+    if (!has_branch) {
+      update_branch(null, null);
+    }
+  }, flags2);
+}
+function pause_effects(state2, items, controlled_anchor) {
+  var items_map = state2.items;
+  var transitions = [];
+  var length = items.length;
+  for (var i = 0; i < length; i++) {
+    pause_children(items[i].e, transitions, true);
+  }
+  var is_controlled = length > 0 && transitions.length === 0 && controlled_anchor !== null;
+  if (is_controlled) {
+    var parent_node = (
+      /** @type {Element} */
+      /** @type {Element} */
+      controlled_anchor.parentNode
+    );
+    clear_text_content(parent_node);
+    parent_node.append(
+      /** @type {Element} */
+      controlled_anchor
+    );
+    items_map.clear();
+    link(state2, items[0].prev, items[length - 1].next);
+  }
+  run_out_transitions(transitions, () => {
+    for (var i2 = 0; i2 < length; i2++) {
+      var item = items[i2];
+      if (!is_controlled) {
+        items_map.delete(item.k);
+        link(state2, item.prev, item.next);
+      }
+      destroy_effect(item.e, !is_controlled);
+    }
+  });
+}
+function each(node, flags2, get_collection, get_key, render_fn, fallback_fn = null) {
+  var anchor = node;
+  var state2 = { flags: flags2, items: /* @__PURE__ */ new Map(), first: null };
+  var is_controlled = (flags2 & EACH_IS_CONTROLLED) !== 0;
+  if (is_controlled) {
+    var parent_node = (
+      /** @type {Element} */
+      node
+    );
+    anchor = parent_node.appendChild(create_text());
+  }
+  var fallback = null;
+  var was_empty = false;
+  var offscreen_items = /* @__PURE__ */ new Map();
+  var each_array = /* @__PURE__ */ derived_safe_equal(() => {
+    var collection = get_collection();
+    return is_array(collection) ? collection : collection == null ? [] : array_from(collection);
+  });
+  var array;
+  var each_effect;
+  function commit() {
+    reconcile(
+      each_effect,
+      array,
+      state2,
+      offscreen_items,
+      anchor,
+      render_fn,
+      flags2,
+      get_key,
+      get_collection
+    );
+    if (fallback_fn !== null) {
+      if (array.length === 0) {
+        if (fallback) {
+          resume_effect(fallback);
+        } else {
+          fallback = branch(() => fallback_fn(anchor));
+        }
+      } else if (fallback !== null) {
+        pause_effect(fallback, () => {
+          fallback = null;
+        });
+      }
+    }
+  }
+  block(() => {
+    each_effect ??= /** @type {Effect} */
+    active_effect;
+    array = /** @type {V[]} */
+    get(each_array);
+    var length = array.length;
+    if (was_empty && length === 0) {
+      return;
+    }
+    was_empty = length === 0;
+    var item, i, value, key;
+    {
+      if (should_defer_append()) {
+        var keys = /* @__PURE__ */ new Set();
+        var batch = (
+          /** @type {Batch} */
+          current_batch
+        );
+        for (i = 0; i < length; i += 1) {
+          value = array[i];
+          key = get_key(value, i);
+          var existing = state2.items.get(key) ?? offscreen_items.get(key);
+          if (existing) {
+            if ((flags2 & (EACH_ITEM_REACTIVE | EACH_INDEX_REACTIVE)) !== 0) {
+              update_item(existing, value, i, flags2);
+            }
+          } else {
+            item = create_item(
+              null,
+              state2,
+              null,
+              null,
+              value,
+              key,
+              i,
+              render_fn,
+              flags2,
+              get_collection,
+              true
+            );
+            offscreen_items.set(key, item);
+          }
+          keys.add(key);
+        }
+        for (const [key2, item2] of state2.items) {
+          if (!keys.has(key2)) {
+            batch.skipped_effects.add(item2.e);
+          }
+        }
+        batch.add_callback(commit);
+      } else {
+        commit();
+      }
+    }
+    get(each_array);
+  });
+}
+function reconcile(each_effect, array, state2, offscreen_items, anchor, render_fn, flags2, get_key, get_collection) {
+  var is_animated = (flags2 & EACH_IS_ANIMATED) !== 0;
+  var should_update = (flags2 & (EACH_ITEM_REACTIVE | EACH_INDEX_REACTIVE)) !== 0;
+  var length = array.length;
+  var items = state2.items;
+  var first = state2.first;
+  var current = first;
+  var seen;
+  var prev = null;
+  var to_animate;
+  var matched = [];
+  var stashed = [];
+  var value;
+  var key;
+  var item;
+  var i;
+  if (is_animated) {
+    for (i = 0; i < length; i += 1) {
+      value = array[i];
+      key = get_key(value, i);
+      item = items.get(key);
+      if (item !== void 0) {
+        item.a?.measure();
+        (to_animate ??= /* @__PURE__ */ new Set()).add(item);
+      }
+    }
+  }
+  for (i = 0; i < length; i += 1) {
+    value = array[i];
+    key = get_key(value, i);
+    item = items.get(key);
+    if (item === void 0) {
+      var pending = offscreen_items.get(key);
+      if (pending !== void 0) {
+        offscreen_items.delete(key);
+        items.set(key, pending);
+        var next = prev ? prev.next : current;
+        link(state2, prev, pending);
+        link(state2, pending, next);
+        move(pending, next, anchor);
+        prev = pending;
+      } else {
+        var child_anchor = current ? (
+          /** @type {TemplateNode} */
+          current.e.nodes_start
+        ) : anchor;
+        prev = create_item(
+          child_anchor,
+          state2,
+          prev,
+          prev === null ? state2.first : prev.next,
+          value,
+          key,
+          i,
+          render_fn,
+          flags2,
+          get_collection
+        );
+      }
+      items.set(key, prev);
+      matched = [];
+      stashed = [];
+      current = prev.next;
+      continue;
+    }
+    if (should_update) {
+      update_item(item, value, i, flags2);
+    }
+    if ((item.e.f & INERT) !== 0) {
+      resume_effect(item.e);
+      if (is_animated) {
+        item.a?.unfix();
+        (to_animate ??= /* @__PURE__ */ new Set()).delete(item);
+      }
+    }
+    if (item !== current) {
+      if (seen !== void 0 && seen.has(item)) {
+        if (matched.length < stashed.length) {
+          var start = stashed[0];
+          var j;
+          prev = start.prev;
+          var a = matched[0];
+          var b = matched[matched.length - 1];
+          for (j = 0; j < matched.length; j += 1) {
+            move(matched[j], start, anchor);
+          }
+          for (j = 0; j < stashed.length; j += 1) {
+            seen.delete(stashed[j]);
+          }
+          link(state2, a.prev, b.next);
+          link(state2, prev, a);
+          link(state2, b, start);
+          current = start;
+          prev = b;
+          i -= 1;
+          matched = [];
+          stashed = [];
+        } else {
+          seen.delete(item);
+          move(item, current, anchor);
+          link(state2, item.prev, item.next);
+          link(state2, item, prev === null ? state2.first : prev.next);
+          link(state2, prev, item);
+          prev = item;
+        }
+        continue;
+      }
+      matched = [];
+      stashed = [];
+      while (current !== null && current.k !== key) {
+        if ((current.e.f & INERT) === 0) {
+          (seen ??= /* @__PURE__ */ new Set()).add(current);
+        }
+        stashed.push(current);
+        current = current.next;
+      }
+      if (current === null) {
+        continue;
+      }
+      item = current;
+    }
+    matched.push(item);
+    prev = item;
+    current = item.next;
+  }
+  if (current !== null || seen !== void 0) {
+    var to_destroy = seen === void 0 ? [] : array_from(seen);
+    while (current !== null) {
+      if ((current.e.f & INERT) === 0) {
+        to_destroy.push(current);
+      }
+      current = current.next;
+    }
+    var destroy_length = to_destroy.length;
+    if (destroy_length > 0) {
+      var controlled_anchor = (flags2 & EACH_IS_CONTROLLED) !== 0 && length === 0 ? anchor : null;
+      if (is_animated) {
+        for (i = 0; i < destroy_length; i += 1) {
+          to_destroy[i].a?.measure();
+        }
+        for (i = 0; i < destroy_length; i += 1) {
+          to_destroy[i].a?.fix();
+        }
+      }
+      pause_effects(state2, to_destroy, controlled_anchor);
+    }
+  }
+  if (is_animated) {
+    queue_micro_task(() => {
+      if (to_animate === void 0) return;
+      for (item of to_animate) {
+        item.a?.apply();
+      }
+    });
+  }
+  each_effect.first = state2.first && state2.first.e;
+  each_effect.last = prev && prev.e;
+  for (var unused of offscreen_items.values()) {
+    destroy_effect(unused.e);
+  }
+  offscreen_items.clear();
+}
+function update_item(item, value, index, type) {
+  if ((type & EACH_ITEM_REACTIVE) !== 0) {
+    internal_set(item.v, value);
+  }
+  if ((type & EACH_INDEX_REACTIVE) !== 0) {
+    internal_set(
+      /** @type {Value<number>} */
+      item.i,
+      index
+    );
+  } else {
+    item.i = index;
+  }
+}
+function create_item(anchor, state2, prev, next, value, key, index, render_fn, flags2, get_collection, deferred2) {
+  var reactive = (flags2 & EACH_ITEM_REACTIVE) !== 0;
+  var mutable = (flags2 & EACH_ITEM_IMMUTABLE) === 0;
+  var v = reactive ? mutable ? /* @__PURE__ */ mutable_source(value, false, false) : source(value) : value;
+  var i = (flags2 & EACH_INDEX_REACTIVE) === 0 ? index : source(index);
+  var item = {
+    i,
+    v,
+    k: key,
+    a: null,
+    // @ts-expect-error
+    e: null,
+    prev,
+    next
+  };
+  try {
+    if (anchor === null) {
+      var fragment = document.createDocumentFragment();
+      fragment.append(anchor = create_text());
+    }
+    item.e = branch(() => render_fn(
+      /** @type {Node} */
+      anchor,
+      v,
+      i,
+      get_collection
+    ), hydrating);
+    item.e.prev = prev && prev.e;
+    item.e.next = next && next.e;
+    if (prev === null) {
+      if (!deferred2) {
+        state2.first = item;
+      }
+    } else {
+      prev.next = item;
+      prev.e.next = item.e;
+    }
+    if (next !== null) {
+      next.prev = item;
+      next.e.prev = item.e;
+    }
+    return item;
+  } finally {
+  }
+}
+function move(item, next, anchor) {
+  var end = item.next ? (
+    /** @type {TemplateNode} */
+    item.next.e.nodes_start
+  ) : anchor;
+  var dest = next ? (
+    /** @type {TemplateNode} */
+    next.e.nodes_start
+  ) : anchor;
+  var node = (
+    /** @type {TemplateNode} */
+    item.e.nodes_start
+  );
+  while (node !== null && node !== end) {
+    var next_node = (
+      /** @type {TemplateNode} */
+      /* @__PURE__ */ get_next_sibling(node)
+    );
+    dest.before(node);
+    node = next_node;
+  }
+}
+function link(state2, prev, next) {
+  if (prev === null) {
+    state2.first = next;
+  } else {
+    prev.next = next;
+    prev.e.next = next && next.e;
+  }
+  if (next !== null) {
+    next.prev = prev;
+    next.e.prev = prev && prev.e;
+  }
+}
+function to_class(value, hash, directives) {
+  var classname = value == null ? "" : "" + value;
+  return classname === "" ? null : classname;
+}
+function set_class(dom, is_html, value, hash, prev_classes, next_classes) {
+  var prev = dom.__className;
+  if (prev !== value || prev === void 0) {
+    var next_class_name = to_class(value);
+    {
+      if (next_class_name == null) {
+        dom.removeAttribute("class");
+      } else {
+        dom.className = next_class_name;
+      }
+    }
+    dom.__className = value;
+  }
+  return next_classes;
+}
+const IS_CUSTOM_ELEMENT = Symbol("is custom element");
+const IS_HTML = Symbol("is html");
+function set_attribute(element, attribute, value, skip_warning) {
+  var attributes = get_attributes(element);
+  if (attributes[attribute] === (attributes[attribute] = value)) return;
+  if (value == null) {
+    element.removeAttribute(attribute);
+  } else if (typeof value !== "string" && get_setters(element).includes(attribute)) {
+    element[attribute] = value;
+  } else {
+    element.setAttribute(attribute, value);
+  }
+}
+function get_attributes(element) {
+  return (
+    /** @type {Record<string | symbol, unknown>} **/
+    // @ts-expect-error
+    element.__attributes ??= {
+      [IS_CUSTOM_ELEMENT]: element.nodeName.includes("-"),
+      [IS_HTML]: element.namespaceURI === NAMESPACE_HTML
+    }
+  );
+}
+var setters_cache = /* @__PURE__ */ new Map();
+function get_setters(element) {
+  var cache_key = element.getAttribute("is") || element.nodeName;
+  var setters = setters_cache.get(cache_key);
+  if (setters) return setters;
+  setters_cache.set(cache_key, setters = []);
+  var descriptors;
+  var proto = element;
+  var element_proto = Element.prototype;
+  while (element_proto !== proto) {
+    descriptors = get_descriptors(proto);
+    for (var key in descriptors) {
+      if (descriptors[key].set) {
+        setters.push(key);
+      }
+    }
+    proto = get_prototype_of(proto);
+  }
+  return setters;
+}
 function prop(props, key, flags2, fallback) {
   var fallback_value = (
     /** @type {V} */
@@ -2732,27 +3371,33 @@ function decrement(__1, count) {
 function reset(__2, count) {
   set(count, 0);
 }
-var root$1 = /* @__PURE__ */ from_html(`<div class="w-full"><div class="p-4"><h2 class="text-lg font-bold text-red-500">Svelte Counter (Client-side)</h2> <p class="text-gray-400 text-sm">Independent reactive state</p></div> <div class="p-6"><div class="text-center mb-6"><div class="text-4xl font-bold text-red-500 mb-3"> </div> <div class="text-sm text-gray-400">Current value</div></div> <div class="flex gap-3"><button class="flex-1 py-3 px-4 bg-arizona-terracotta/10 text-arizona-terracotta border border-arizona-terracotta/20 rounded-lg hover:bg-arizona-terracotta/20 hover:border-arizona-terracotta/40 hover:text-arizona-mesa focus:ring-2 focus:ring-arizona-terracotta/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">−</button> <button class="flex-1 py-3 px-4 bg-slate/20 text-silver border border-slate/30 rounded-lg hover:bg-slate/30 hover:border-slate/50 hover:text-pearl focus:ring-2 focus:ring-slate/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">Reset</button> <button class="flex-1 py-3 px-4 bg-arizona-teal/10 text-arizona-teal border border-arizona-teal/20 rounded-lg hover:bg-arizona-teal/20 hover:border-arizona-teal/40 hover:text-arizona-sage focus:ring-2 focus:ring-arizona-teal/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">+</button></div></div></div>`);
+var root$1 = /* @__PURE__ */ from_html(`<div class="w-full"><div class="p-4"><h2 class="text-lg font-bold text-red-500"> </h2> <p class="text-gray-400 text-sm">Independent reactive state</p></div> <div class="p-6"><div class="text-center mb-6"><div class="text-4xl font-bold text-red-500 mb-3"> </div> <div class="text-sm text-gray-400">Current value</div></div> <div class="flex gap-3"><button class="flex-1 py-3 px-4 bg-arizona-terracotta/10 text-arizona-terracotta border border-arizona-terracotta/20 rounded-lg hover:bg-arizona-terracotta/20 hover:border-arizona-terracotta/40 hover:text-arizona-mesa focus:ring-2 focus:ring-arizona-terracotta/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">−</button> <button class="flex-1 py-3 px-4 bg-slate/20 text-silver border border-slate/30 rounded-lg hover:bg-slate/30 hover:border-slate/50 hover:text-pearl focus:ring-2 focus:ring-slate/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">Reset</button> <button class="flex-1 py-3 px-4 bg-arizona-teal/10 text-arizona-teal border border-arizona-teal/20 rounded-lg hover:bg-arizona-teal/20 hover:border-arizona-teal/40 hover:text-arizona-sage focus:ring-2 focus:ring-arizona-teal/50 focus:ring-offset-2 focus:ring-offset-charcoal transition-all duration-200 font-medium cursor-pointer">+</button></div></div></div>`);
 function Counter($$anchor, $$props) {
   push($$props, true);
-  let initialCount = prop($$props, "initialCount", 3, 0);
+  let title = prop($$props, "title", 3, "Svelte Counter"), initialCount = prop($$props, "initialCount", 3, 0);
   let count = /* @__PURE__ */ state(proxy(initialCount()));
   user_effect(() => {
     set(count, initialCount());
   });
   var div = root$1();
-  var div_1 = sibling(child(div), 2);
-  var div_2 = child(div_1);
+  var div_1 = child(div);
+  var h2 = child(div_1);
+  var text = child(h2);
+  var div_2 = sibling(div_1, 2);
   var div_3 = child(div_2);
-  var text = child(div_3);
-  var div_4 = sibling(div_2, 2);
-  var button = child(div_4);
+  var div_4 = child(div_3);
+  var text_1 = child(div_4);
+  var div_5 = sibling(div_3, 2);
+  var button = child(div_5);
   button.__click = [decrement, count];
   var button_1 = sibling(button, 2);
   button_1.__click = [reset, count];
   var button_2 = sibling(button_1, 2);
   button_2.__click = [increment, count];
-  template_effect(() => set_text(text, get(count)));
+  template_effect(() => {
+    set_text(text, title());
+    set_text(text_1, get(count));
+  });
   append($$anchor, div);
   pop();
 }
@@ -2761,15 +3406,205 @@ const __vite_glob_0_0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
   __proto__: null,
   default: Counter
 }, Symbol.toStringTag, { value: "Module" }));
-var root = /* @__PURE__ */ from_html(`<main class="h-full flex flex-col justify-center p-4"><h1 class="text-lg font-bold text-red-500"> </h1> <p class="mt-2 text-gray-400 text-sm">This is a Svelte component integrated with Arizona framework.</p></main>`);
-function HelloWorld($$anchor, $$props) {
-  let name = prop($$props, "name", 3, "World");
-  var main = root();
-  var h1 = child(main);
-  var text = child(h1);
-  template_effect(() => set_text(text, `Hello, ${name() ?? ""}!`));
-  append($$anchor, main);
+function resetBoard(_2, dropZones, items) {
+  set(
+    dropZones,
+    [
+      { id: "todo", title: "To Do", items: [items[0], items[1]] },
+      { id: "doing", title: "Doing", items: [items[2]] },
+      { id: "done", title: "Done", items: [items[3]] }
+    ],
+    true
+  );
 }
+var root_2 = /* @__PURE__ */ from_html(`<div role="button" tabindex="0" draggable="true" style="transform-origin: center;"><div class="flex items-center gap-2"><span class="text-lg"> </span> <span> </span></div></div>`);
+var root_3 = /* @__PURE__ */ from_html(`<div class="text-center text-slate/50 text-sm mt-8 italic">Drop items here</div>`);
+var root_5 = /* @__PURE__ */ from_html(`<div class="text-center text-arizona-teal/60 text-sm mt-4 italic animate-pulse">Release to add here</div>`);
+var root_1 = /* @__PURE__ */ from_html(`<div role="region"><h4 class="font-semibold text-arizona-teal mb-3 text-center"> </h4> <div class="space-y-2"></div> <!></div>`);
+var root = /* @__PURE__ */ from_html(`<main class="h-full p-6 space-y-6"><div class="text-center"><h1 class="text-2xl font-bold text-arizona-teal mb-2">Hello, <span class="text-red-500"> </span>!</h1> <p class="text-gray-400 text-sm">Interactive drag & drop Kanban board</p></div> <div class="bg-charcoal/50 rounded-lg p-6 border border-arizona-teal/20"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold text-arizona-teal">Svelte Features Board</h3> <button class="px-3 py-1 bg-slate/20 text-silver rounded border border-slate/30 hover:bg-slate/30 transition-colors text-xs">Reset</button></div> <div class="grid grid-cols-1 md:grid-cols-3 gap-4"></div></div> <div class="bg-arizona-teal/5 rounded-lg p-4 border border-arizona-teal/20"><h3 class="text-sm font-semibold text-arizona-teal mb-2">How it works</h3> <div class="text-xs text-silver/80 space-y-1"><div>• Drag cards between columns to organize Svelte features</div> <div>• Hover effects and smooth animations powered by Svelte reactivity</div> <div>• State management with Svelte 5's $state rune</div> <div>• No external libraries needed - pure browser APIs</div></div></div></main>`);
+function HelloWorld($$anchor, $$props) {
+  push($$props, true);
+  let name = prop($$props, "name", 3, "World");
+  let items = proxy([
+    {
+      id: 1,
+      text: "Drag me around!",
+      color: "arizona-teal",
+      emoji: "🚀"
+    },
+    {
+      id: 2,
+      text: "Reactive state",
+      color: "arizona-terracotta",
+      emoji: "⚡"
+    },
+    {
+      id: 3,
+      text: "No virtual DOM",
+      color: "arizona-gold",
+      emoji: "💫"
+    },
+    {
+      id: 4,
+      text: "Compile-time magic",
+      color: "arizona-sage",
+      emoji: "✨"
+    }
+  ]);
+  let draggedItem = /* @__PURE__ */ state(null);
+  let hoveredZone = /* @__PURE__ */ state(null);
+  let dragOverIndex = /* @__PURE__ */ state(-1);
+  let dropZones = /* @__PURE__ */ state(proxy([
+    { id: "todo", title: "To Do", items: [items[0], items[1]] },
+    { id: "doing", title: "Doing", items: [items[2]] },
+    { id: "done", title: "Done", items: [items[3]] }
+  ]));
+  function handleDragStart(event2, item) {
+    set(draggedItem, item, true);
+    event2.dataTransfer.effectAllowed = "move";
+    event2.target.style.opacity = "0.5";
+  }
+  function handleDragEnd(event2) {
+    event2.target.style.opacity = "1";
+    set(hoveredZone, null);
+    set(dragOverIndex, -1);
+  }
+  function handleDragOver(event2) {
+    event2.preventDefault();
+    event2.dataTransfer.dropEffect = "move";
+  }
+  function handleDragEnter(event2, zone) {
+    event2.preventDefault();
+    if (get(draggedItem)) {
+      set(hoveredZone, zone.id, true);
+    }
+  }
+  function handleDragLeave(event2, zone) {
+    if (!event2.currentTarget.contains(event2.relatedTarget)) {
+      set(hoveredZone, null);
+      set(dragOverIndex, -1);
+    }
+  }
+  function handleItemDragOver(event2, zone, index) {
+    event2.preventDefault();
+    event2.stopPropagation();
+    if (get(draggedItem) && get(hoveredZone) === zone.id) {
+      const rect = event2.currentTarget.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      set(dragOverIndex, event2.clientY < midpoint ? index : index + 1, true);
+    }
+  }
+  function handleDrop(event2, targetZone, dropIndex = -1) {
+    event2.preventDefault();
+    set(hoveredZone, null);
+    const finalDropIndex = dropIndex !== -1 ? dropIndex : get(dragOverIndex);
+    set(dragOverIndex, -1);
+    if (!get(draggedItem)) return;
+    set(
+      dropZones,
+      get(dropZones).map((zone) => ({
+        ...zone,
+        items: zone.items.filter((item) => item.id !== get(draggedItem).id)
+      })),
+      true
+    );
+    const targetZoneIndex = get(dropZones).findIndex((zone) => zone.id === targetZone.id);
+    const targetItems = [...get(dropZones)[targetZoneIndex].items];
+    const insertIndex = finalDropIndex >= 0 && finalDropIndex <= targetItems.length ? finalDropIndex : targetItems.length;
+    targetItems.splice(insertIndex, 0, get(draggedItem));
+    get(dropZones)[targetZoneIndex].items = targetItems;
+    set(draggedItem, null);
+  }
+  function getPreviewItems(zone) {
+    if (get(hoveredZone) === zone.id && get(draggedItem)) {
+      const items2 = zone.items.filter((item) => item.id !== get(draggedItem).id);
+      const insertIndex = get(dragOverIndex) >= 0 && get(dragOverIndex) <= items2.length ? get(dragOverIndex) : items2.length;
+      const result = [...items2];
+      result.splice(insertIndex, 0, get(draggedItem));
+      return result;
+    }
+    return zone.items;
+  }
+  var main = root();
+  var div = child(main);
+  var h1 = child(div);
+  var span = sibling(child(h1));
+  var text = child(span);
+  var div_1 = sibling(div, 2);
+  var div_2 = child(div_1);
+  var button = sibling(child(div_2), 2);
+  button.__click = [resetBoard, dropZones, items];
+  var div_3 = sibling(div_2, 2);
+  each(div_3, 21, () => get(dropZones), (zone) => zone.id, ($$anchor2, zone) => {
+    var div_4 = root_1();
+    var h4 = child(div_4);
+    var text_1 = child(h4);
+    var div_5 = sibling(h4, 2);
+    each(div_5, 23, () => getPreviewItems(get(zone)), (item) => item.id, ($$anchor3, item, index) => {
+      var div_6 = root_2();
+      var div_7 = child(div_6);
+      var span_1 = child(div_7);
+      var text_2 = child(span_1);
+      var span_2 = sibling(span_1, 2);
+      var text_3 = child(span_2);
+      template_effect(() => {
+        set_attribute(div_6, "aria-label", `Draggable item: ${get(item).text ?? ""}`);
+        set_class(div_6, 1, `bg-${get(item).color ?? ""}/20 border border-${get(item).color ?? ""}/30 rounded-lg p-3 cursor-move transition-all duration-200 hover:bg-${get(item).color ?? ""}/30 hover:scale-105 hover:shadow-lg ${get(hoveredZone) === get(zone).id && get(draggedItem) && get(item).id === get(draggedItem).id ? "opacity-60 scale-95 border-dashed animate-pulse" : ""}`);
+        set_text(text_2, get(item).emoji);
+        set_class(span_2, 1, `text-sm text-${get(item).color ?? ""} font-medium`);
+        set_text(text_3, get(item).text);
+      });
+      event("dragstart", div_6, (e) => handleDragStart(e, get(item)));
+      event("dragend", div_6, handleDragEnd);
+      event("dragover", div_6, (e) => handleItemDragOver(e, get(zone), get(index)));
+      event("drop", div_6, (e) => handleDrop(e, get(zone), get(index)));
+      append($$anchor3, div_6);
+    });
+    var node = sibling(div_5, 2);
+    {
+      var consequent = ($$anchor3) => {
+        var div_8 = root_3();
+        append($$anchor3, div_8);
+      };
+      var alternate = ($$anchor3) => {
+        var fragment = comment();
+        var node_1 = first_child(fragment);
+        {
+          var consequent_1 = ($$anchor4) => {
+            var div_9 = root_5();
+            append($$anchor4, div_9);
+          };
+          if_block(
+            node_1,
+            ($$render) => {
+              if (get(zone).items.length === 0 && get(hoveredZone) === get(zone).id) $$render(consequent_1);
+            },
+            true
+          );
+        }
+        append($$anchor3, fragment);
+      };
+      if_block(node, ($$render) => {
+        if (getPreviewItems(get(zone)).length === 0) $$render(consequent);
+        else $$render(alternate, false);
+      });
+    }
+    template_effect(() => {
+      set_attribute(div_4, "aria-label", `Drop zone for ${get(zone).title ?? ""}`);
+      set_class(div_4, 1, `bg-obsidian/60 rounded-lg p-4 border-2 border-dashed min-h-[200px] transition-all duration-200 ${get(hoveredZone) === get(zone).id ? "border-arizona-teal/60 bg-arizona-teal/5 scale-105 shadow-lg shadow-arizona-teal/20" : "border-arizona-teal/20 hover:border-arizona-teal/40"}`);
+      set_text(text_1, get(zone).title);
+    });
+    event("dragover", div_4, handleDragOver);
+    event("dragenter", div_4, (e) => handleDragEnter(e, get(zone)));
+    event("dragleave", div_4, (e) => handleDragLeave(e, get(zone)));
+    event("drop", div_4, (e) => handleDrop(e, get(zone)));
+    append($$anchor2, div_4);
+  });
+  template_effect(() => set_text(text, name()));
+  append($$anchor, main);
+  pop();
+}
+delegate(["click"]);
 const __vite_glob_0_1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: HelloWorld
