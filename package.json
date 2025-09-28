@@ -23,6 +23,6 @@
     "vite": "^7.1.7"
   },
   "dependencies": {
-    "@arizona-framework/client": "^0.1.2"
+    "@arizona-framework/client": "^0.2.0"
   }
 }
