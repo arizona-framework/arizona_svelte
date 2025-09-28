@@ -48,15 +48,22 @@ class ArizonaSvelteLifecycle {
           const instance = mount(ComponentClass, { target, props });
           this.mountedComponents.set(target, instance);
           mountedCount++;
+          console.log(`[Arizona Svelte] ✅ Mounted '${componentName}' component`, {
+            target: target.id || target.className || 'unnamed',
+            props,
+            totalMounted: this.mountedComponents.size
+          });
         } catch (error) {
-          console.error(`[Arizona Svelte] Failed to mount component '${componentName}':`, error);
+          console.error(`[Arizona Svelte] ❌ Failed to mount component '${componentName}':`, error);
         }
       } else {
         console.warn(`[Arizona Svelte] Component '${componentName}' not found in registry`);
       }
     });
 
-    console.log(`[Arizona Svelte] Mounted ${mountedCount} components`);
+    if (mountedCount > 0) {
+      console.log(`[Arizona Svelte] Mounted ${mountedCount} components`);
+    }
     return mountedCount;
   }
 
@@ -70,11 +77,16 @@ class ArizonaSvelteLifecycle {
 
     if (instance) {
       try {
+        const componentName = target.dataset.svelteComponent || 'unknown';
         unmount(instance);
         this.mountedComponents.delete(target);
+        console.log(`[Arizona Svelte] 🗑️ Unmounted '${componentName}' component`, {
+          target: target.id || target.className || 'unnamed',
+          totalMounted: this.mountedComponents.size
+        });
         return true;
       } catch (error) {
-        console.error(`[Arizona Svelte] Failed to unmount component:`, error);
+        console.error(`[Arizona Svelte] ❌ Failed to unmount component:`, error);
         return false;
       }
     }
@@ -336,8 +348,8 @@ class ArizonaSvelteLifecycle {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         shouldScan = true;
       } else if (mutation.type === 'attributes' &&
-                 (mutation.attributeName === 'data-svelte-component' ||
-                  mutation.attributeName === 'data-svelte-props')) {
+        (mutation.attributeName === 'data-svelte-component' ||
+          mutation.attributeName === 'data-svelte-props')) {
         shouldScan = true;
       }
     });
@@ -355,7 +367,7 @@ class ArizonaSvelteLifecycle {
     try {
       const mounted = await this.mountComponents();
       if (mounted > 0) {
-        console.log(`[Arizona Svelte] Auto-mounted ${mounted} new components`);
+        console.log(`[Arizona Svelte] 🔄 Auto-mounted ${mounted} new components`);
       }
     } catch (error) {
       console.error('[Arizona Svelte] Error during auto-mount:', error);

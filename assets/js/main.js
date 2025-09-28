@@ -13,8 +13,13 @@ arizonaSvelte.startMonitoring({
   autoMount: true,        // Automatically mount new components
   autoUnmount: true,      // Automatically unmount removed components
   observeSubtree: true,   // Monitor the entire DOM tree
-  debounceMs: 100         // Debounce DOM changes for 100ms
+  debounceMs: 0           // Debounce DOM changes for 0ms
 });
 
 // Make available globally for debugging
 globalThis.arizonaSvelte = arizonaSvelte;
+
+// Add some helpful logging
+console.log('[Arizona Svelte] 🚀 Automatic component monitoring started');
+console.log('[Arizona Svelte] 🧪 LifecycleDemo component available in UI');
+console.log('[Arizona Svelte] 🔍 Global access: window.arizonaSvelte');
