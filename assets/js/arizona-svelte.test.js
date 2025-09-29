@@ -73,4 +73,37 @@ describe('ArizonaSvelte', () => {
     expect(instance.hasComponent('Test2')).toBe(true);
     expect(instance.getComponentNames()).toEqual(['Test1', 'Test2']);
   });
+
+  it('should pass options to lifecycle', () => {
+    const options = {
+      autoMount: false,
+      autoUnmount: false,
+      debounceMs: 100,
+    };
+
+    const instance = new ArizonaSvelte(options);
+    const lifecycleOptions = instance.getLifecycle().getMonitoringOptions();
+
+    expect(lifecycleOptions.autoMount).toBe(false);
+    expect(lifecycleOptions.autoUnmount).toBe(false);
+    expect(lifecycleOptions.debounceMs).toBe(100);
+  });
+
+  it('should pass options to lifecycle with components', () => {
+    const components = {
+      Test: class Test {},
+    };
+    const options = {
+      components,
+      autoMount: true,
+      debounceMs: 50,
+    };
+
+    const instance = new ArizonaSvelte(options);
+    const lifecycleOptions = instance.getLifecycle().getMonitoringOptions();
+
+    expect(instance.hasComponent('Test')).toBe(true);
+    expect(lifecycleOptions.autoMount).toBe(true);
+    expect(lifecycleOptions.debounceMs).toBe(50);
+  });
 });

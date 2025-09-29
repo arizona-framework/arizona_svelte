@@ -37,7 +37,7 @@ class ArizonaSvelte {
    */
   constructor(options = {}) {
     this.registry = new ArizonaSvelteRegistry();
-    this.lifecycle = new ArizonaSvelteLifecycle(this.registry);
+    this.lifecycle = new ArizonaSvelteLifecycle(this.registry, options);
 
     // Register components if provided
     if (options.components) {
