@@ -49,11 +49,19 @@ class ArizonaSvelteLifecycle {
 
   /**
    * Mount Svelte components from DOM data attributes
-   * Searches for elements with data-svelte-component attribute and mounts the corresponding components
+   * Searches for elements with data-svelte-component attribute and mounts the corresponding components.
+   * Clears any placeholder content in the wrapper before mounting.
+   *
+   * The wrapper element (target) is preserved and serves as the mount container.
+   * Components are mounted inside the wrapper, not replacing it.
+   *
    * @returns {Promise<number>} Number of components successfully mounted
    * @example
    * // HTML: <div data-svelte-component="Counter" data-svelte-props='{"count": 0}'></div>
    * const mounted = await lifecycle.mountComponents();
+   * // Result: <div data-svelte-component="Counter" data-svelte-props='{"count": 0}'>
+   * //           <div class="counter">...</div>  <!-- Component rendered here -->
+   * //         </div>
    */
   async mountComponents() {
     const svelteTargets = document.querySelectorAll('[data-svelte-component]');
@@ -72,6 +80,11 @@ class ArizonaSvelteLifecycle {
 
       if (ComponentClass) {
         try {
+          // Clear any placeholder content before mounting.
+          // This removes server-rendered loading states or placeholders
+          // while preserving the wrapper element and its attributes.
+          target.innerHTML = '';
+
           const instance = mount(ComponentClass, { target, props });
           this.mountedComponents.set(target, instance);
           mountedCount++;

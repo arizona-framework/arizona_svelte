@@ -1,7 +1,7 @@
 {"1.2.0",
 [{<<"arizona">>,
   {git,"https://github.com/arizona-framework/arizona.git",
-       {ref,"9fc15a2fcb829a343bc5d721eb53401c391eccbb"}},
+       {ref,"d6552d52d3af4f4feab2e2bcd6a53e857009d569"}},
   0},
  {<<"cowboy">>,{pkg,<<"cowboy">>,<<"2.14.0">>},1},
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"2.16.0">>},2},

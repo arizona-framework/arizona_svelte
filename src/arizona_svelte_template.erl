@@ -41,13 +41,15 @@ for Svelte components due to `data-arizona-update="false"`.
 %% API function exports
 %% --------------------------------------------------------------------
 
--export([render_component/2]).
+-export([render_component/3]).
 
 %% --------------------------------------------------------------------
 %% Types exports
 %% --------------------------------------------------------------------
 
--export_type([component/0, props/0]).
+-export_type([component/0]).
+-export_type([properties/0]).
+-export_type([attributes/0]).
 
 %% --------------------------------------------------------------------
 %% Types definitions
@@ -68,7 +70,25 @@ Map of properties passed to the Svelte component. Keys can be atoms or binaries,
 values must be JSON-serializable. These props become available in the Svelte
 component via the `$props()` rune.
 """.
--nominal props() :: #{atom() | binary() => json:encode_value()}.
+-nominal properties() :: #{atom() | binary() => json:encode_value()}.
+
+-doc ~"""
+Custom HTML attributes for the wrapper element.
+
+Can be either an Arizona template (for dynamic attributes) or a rendered HTML value
+(for static attributes). These attributes are added to the wrapper div element
+that contains the Svelte component.
+
+Examples:
+- Static: `~"class=\"flex-1\" id=\"counter\""`
+- Dynamic: `arizona_template:from_string(~"class=\"{MyClass}\"")`
+
+Common use cases:
+- Layout styling (`class="flex-1"`, `style="display: contents"`)
+- Identification (`id="main-component"`)
+- Dynamic conditional attributes based on bindings
+""".
+-nominal attributes() :: arizona_template:template() | arizona_html:value().
 
 %% --------------------------------------------------------------------
 %% API Functions
@@ -85,7 +105,7 @@ Arizona from interfering with Svelte's DOM management.
 ## Implementation Details
 
 1. Calls `arizona_template:render_stateless/4` with the component template
-2. Passes component name and props as bindings to the template
+2. Passes component name, props, and attributes as bindings to the template
 3. Sets `#{update => false}` to prevent Arizona DOM updates
 4. Returns Arizona template callback for rendering
 
@@ -93,27 +113,40 @@ Arizona from interfering with Svelte's DOM management.
 
 - `Component` - Svelte component identifier (binary)
 - `Props` - Component properties map with JSON-serializable values
+- `Attrs` - Optional custom HTML attributes for the wrapper element
 
 ## Returns
 
-Arizona template render callback that generates the component HTML structure.
+Arizona template render callback that generates the component HTML structure
+with the following format:
+
+```html
+<div
+  data-svelte-component="ComponentName"
+  data-svelte-props='{"prop":"value"}'
+  data-arizona-update="false"
+  [custom attributes]
+></div>
+```
 
 ## Note
 
-This function is called internally by `arizona_svelte:render_component/2`
+This function is called internally by `arizona_svelte:render_component/2,3`
 and should not be used directly by application code.
 """.
--spec render_component(Component, Props) -> Callback when
+-spec render_component(Component, Props, Attrs) -> Callback when
     Component :: component(),
-    Props :: props(),
+    Props :: properties(),
+    Attrs :: attributes(),
     Callback :: arizona_template:render_callback().
-render_component(Component, Props) ->
+render_component(Component, Props, Attrs) ->
     arizona_template:render_stateless(
         arizona_svelte_components,
         component,
         #{
             component => Component,
-            props => Props
+            props => Props,
+            attributes => Attrs
         },
         #{update => false}
     ).
