@@ -52,34 +52,57 @@ Generate HTML template for Svelte component mounting.
 
 Creates a div element with the required data attributes for JavaScript-side
 component discovery and mounting. This function uses Arizona's template DSL
-to dynamically inject component name and props from the provided bindings.
+to dynamically inject component name, props, and custom attributes from the
+provided bindings.
 
 ## Template Generation
 
-The function generates HTML with three critical attributes:
+The function generates HTML with data attributes and optional custom attributes:
 
 1. `data-svelte-component` - Component name from `component` binding
 2. `data-svelte-props` - JSON-encoded props from `props` binding
 3. `data-arizona-update="false"` - Prevents Arizona DOM interference
+4. Custom attributes from `attributes` binding (optional)
 
 ## Bindings Expected
 
 - `component` - Binary string with the Svelte component name
 - `props` - Map with component properties (defaults to empty map)
+- `attributes` - Optional custom HTML attributes (defaults to empty string)
 
-## Generated HTML Example
+## Generated HTML Examples
 
+Basic component:
 ```html
 <div
   data-svelte-component="Counter"
   data-svelte-props='{"title":"My Counter","count":5}'
-  data-arizona-update="false">
-</div>
+  data-arizona-update="false"
+></div>
 ```
+
+With custom attributes:
+```html
+<div
+  data-svelte-component="Counter"
+  data-svelte-props='{"count":5}'
+  data-arizona-update="false"
+  class="flex-1"
+  id="main-counter"
+></div>
+```
+
+## Wrapper Element Purpose
+
+The wrapper div serves multiple purposes:
+- Provides a stable mount target for the Svelte component
+- Enables JavaScript discovery via `data-svelte-component` attribute
+- Allows custom styling/layout via additional HTML attributes
+- Preserves component metadata for lifecycle management
 
 ## Internal Use
 
-This function is called by `arizona_svelte_template:render_component/2`
+This function is called by `arizona_svelte_template:render_component/2,3`
 and should not be invoked directly by application code.
 """.
 -spec component(Bindings) -> Template when
@@ -93,5 +116,6 @@ component(Bindings) ->
             json:encode(arizona_template:get_binding(props, Bindings, #{}))
         )}'
         data-arizona-update="false"
+        {arizona_template:render_slot(arizona_template:get_binding(attributes, Bindings, ~""))}
     ></div>
     """).

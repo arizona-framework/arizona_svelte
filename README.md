@@ -168,6 +168,130 @@ arizonaSvelte.startMonitoring();
 </div>
 ```
 
+## Understanding Wrapper Elements
+
+Components are rendered inside a wrapper `<div>` element that serves as the mount
+target for Svelte components. This wrapper is necessary for the JavaScript side
+to discover and manage component lifecycle.
+
+### DOM Structure Example
+
+When you render a component:
+
+```erlang
+arizona_svelte:render_component("Counter", #{initialCount => 5})
+```
+
+The resulting DOM structure is:
+
+```html
+<!-- Wrapper element (created by Arizona) -->
+<div
+  data-svelte-component="Counter"
+  data-svelte-props='{"initialCount":5}'
+  data-arizona-update="false"
+>
+  <!-- Component content (rendered by Svelte) -->
+  <div class="counter">
+    <h2>Count: 5</h2>
+    <button>Increment</button>
+  </div>
+</div>
+```
+
+**Why the wrapper exists:**
+
+- `data-svelte-component` - JavaScript identifies which component to mount
+- `data-svelte-props` - Props are passed to the component
+- `data-arizona-update="false"` - Prevents Arizona from interfering with Svelte's
+  DOM management
+- Provides a stable mount target for component lifecycle management
+
+### Customizing Wrapper Elements
+
+You can add custom HTML attributes to the wrapper for styling and layout control.
+
+### Basic Usage
+
+```erlang
+% Simple string attributes
+arizona_svelte:render_component("Card", #{}, ~"class=\"flex-1 p-4\" id=\"main-card\"")
+```
+
+### Dynamic Attributes with Arizona Templates
+
+```erlang
+% Conditional attributes based on bindings
+arizona_svelte:render_component("Widget", #{}, arizona_template:from_string(~"""
+    class="widget"
+    {case arizona_template:get_binding(hidden, Bindings) of
+        true -> ~"hidden";
+        false -> ~""
+    end}
+"""))
+```
+
+### Layout: Making Wrappers Transparent
+
+The wrapper div can interfere with flexbox/grid layouts:
+
+```erlang
+% Without custom attributes - wrapper breaks layout
+<div class="flex gap-4">
+  {arizona_svelte:render_component("Card", #{})}
+  {arizona_svelte:render_component("Card", #{})}
+</div>
+```
+
+**Problem:** The wrapper `<div>` becomes the flex child, not the Card component itself.
+
+```html
+<!-- Resulting DOM - wrapper is the flex child -->
+<div class="flex gap-4">
+  <div data-svelte-component="Card">  <!-- This is the flex child -->
+    <div class="card">...</div>       <!-- Card content is nested -->
+  </div>
+  <div data-svelte-component="Card">
+    <div class="card">...</div>
+  </div>
+</div>
+```
+
+**Solution:** Use `display: contents` to make the wrapper transparent to layout:
+
+```erlang
+% Wrapper becomes invisible - parent sees Card's children directly
+<div class="flex gap-4">
+  {arizona_svelte:render_component("Card", #{}, ~"style=\"display: contents\"")}
+  {arizona_svelte:render_component("Card", #{}, ~"style=\"display: contents\"")}
+</div>
+```
+
+```html
+<!-- Resulting behavior - Card's root is the flex child -->
+<div class="flex gap-4">
+  <div data-svelte-component="Card" style="display: contents">
+    <div class="card">...</div>  <!-- This behaves as the flex child -->
+  </div>
+  <div data-svelte-component="Card" style="display: contents">
+    <div class="card">...</div>
+  </div>
+</div>
+```
+
+**Other layout options:**
+
+```erlang
+% Add flex/grid classes to the wrapper itself
+arizona_svelte:render_component("Card", #{}, ~"class=\"flex-1\"")
+arizona_svelte:render_component("GridItem", #{}, ~"class=\"col-span-2\"")
+```
+
+**Note:** `display: contents` has
+[accessibility limitations](https://caniuse.com/css-display-contents) with
+buttons and certain ARIA roles. Test with screen readers if accessibility is
+critical.
+
 ## Features
 
 - **🔄 Automatic Lifecycle Management**: Components mount/unmount automatically
@@ -177,6 +301,7 @@ when DOM changes
 - **🎯 Simple Setup**: Register components and start monitoring in a few lines
 - **🧪 Development Friendly**: Built-in logging and debugging support
 - **⚡ High Performance**: Zero-debounce monitoring for immediate responsiveness
+- **🎨 Customizable Wrappers**: Add classes, IDs, styles, and dynamic attributes
 
 ## Important: State Independence
 
